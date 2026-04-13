@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+
+# Environment variables
+.env
+*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+
+# Vite cache
+.vite/
+
+# Playwright
+.playwright-mcp/
+
+# Claude
+.claude/
+
+# Uploads
+uploads/

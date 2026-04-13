@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: hyperfocus-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: hyperfocus
+      POSTGRES_PASSWORD: hyperfocus_dev_2024
+      POSTGRES_DB: hyperfocus
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build: .
+    container_name: hyperfocus-backend
+    restart: unless-stopped
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://hyperfocus:hyperfocus_dev_2024@db:5432/hyperfocus?schema=public
+      JWT_SECRET: dev-secret-key-change-in-production
+      PORT: 3000
+      NODE_ENV: development
+    volumes:
+      - ./src:/app/src
+      - ./uploads:/app/uploads
+    command: npm run dev
+
+volumes:
+  postgres_data:

@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ELEVE
+  PARENT
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  avatarUrl    String?  @map("avatar_url")
+  role         Role     @default(ELEVE)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  subjects Subject[]
+
+  @@map("users")
+}
+
+model Subject {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  color     String   @default("#6366f1")
+  icon      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@map("subjects")
+}
+
+model Lesson {
+  id             String    @id @default(uuid())
+  subjectId      String    @map("subject_id")
+  title          String
+  order          Int       @default(0)
+  contentPercent Int       @default(0) @map("content_percent")
+  screenshotUrl  String?   @map("screenshot_url")
+  isRevised      Boolean   @default(false) @map("is_revised")
+  revisedAt      DateTime? @map("revised_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@map("lessons")
+}
