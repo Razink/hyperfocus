@@ -5,6 +5,7 @@ import authRoutes from './routes/auth.routes';
 import subjectRoutes from './routes/subject.routes';
 import lessonRoutes from './routes/lesson.routes';
 import revisionRoutes from './routes/revision.routes';
+import dashboardRoutes from './routes/dashboard.routes';
 
 dotenv.config();
 
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/lessons', lessonRoutes);
 app.use('/api/revisions', revisionRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
