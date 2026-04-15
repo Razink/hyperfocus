@@ -209,17 +209,24 @@ const Timetable = ({ showExams = false, weekStart }: { showExams?: boolean; week
           return (
             <React.Fragment key={`row-${di}`}>
               <div
-                className={`border-b border-r border-gray-100 flex flex-col items-center justify-center px-1 gap-0.5 ${isToday ? 'bg-primary-50' : 'bg-gray-50'}`}
-                style={{ gridRow: di + 2, gridColumn: 1 }}
+                className="border-b border-r border-gray-100 flex flex-col items-center justify-center px-1 gap-0.5"
+                style={{
+                  gridRow: di + 2, gridColumn: 1,
+                  backgroundColor: isToday ? '#e0e7ff' : '#f9fafb',
+                  borderLeft: isToday ? '4px solid #4f46e5' : undefined,
+                }}
               >
-                <p className={`text-xs font-bold ${isToday ? 'text-primary-600' : 'text-gray-600'}`}>{day}</p>
-                {isToday && <span className="text-xs bg-primary-600 text-white rounded-full px-1.5 py-0.5">auj.</span>}
+                <p className="text-xs font-bold" style={{ color: isToday ? '#4338ca' : '#4b5563' }}>{day}</p>
+                {isToday && <span className="text-xs text-white rounded-full px-1.5 py-0.5" style={{ backgroundColor: '#4f46e5', fontSize: '10px' }}>auj.</span>}
               </div>
               {HOURS.map((_, hi) => (
                 <div
                   key={`cell-${di}-${hi}`}
-                  className={`border-b border-r border-gray-100 last:border-r-0 ${isToday ? 'bg-primary-50/20' : ''}`}
-                  style={{ gridRow: di + 2, gridColumn: hi + 2 }}
+                  className="border-b border-r border-gray-100 last:border-r-0"
+                  style={{
+                    gridRow: di + 2, gridColumn: hi + 2,
+                    backgroundColor: isToday ? '#eef2ff' : undefined,
+                  }}
                 />
               ))}
             </React.Fragment>
@@ -238,9 +245,9 @@ const Timetable = ({ showExams = false, weekStart }: { showExams?: boolean; week
               zIndex: 10,
             }}
           >
-            <p className="text-xs font-bold leading-tight truncate">{course.subject}</p>
-            {course.room && <p className="text-xs opacity-60 truncate">{course.room}</p>}
-            <span className="text-xs opacity-60 shrink-0">{course.start}h–{course.end}h</span>
+            <p className="text-xs leading-tight truncate" style={{ fontWeight: today === course.day ? 800 : 700 }}>{course.subject}</p>
+            {course.room && <p className="text-xs opacity-60 truncate" style={{ fontWeight: today === course.day ? 600 : 400 }}>{course.room}</p>}
+            <span className="text-xs opacity-60 shrink-0" style={{ fontWeight: today === course.day ? 600 : 400 }}>{course.start}h–{course.end}h</span>
           </div>
         ))}
 
@@ -527,14 +534,14 @@ const RevisionView = () => {
             const daySessions = sessionsByDay[di] || [];
 
             return (
-              <div key={di} className={`min-h-[280px] flex flex-col ${isToday ? 'bg-primary-50/30' : ''}`}>
+              <div key={di} className={`min-h-[280px] flex flex-col ${isToday ? 'border-t-2 border-primary-500' : ''}`}>
                 {/* Day header */}
-                <div className={`px-3 py-2.5 border-b border-gray-100 text-center ${isToday ? 'bg-primary-50' : 'bg-gray-50'}`}>
-                  <p className={`text-xs font-bold ${isToday ? 'text-primary-600' : 'text-gray-600'}`}>{day}</p>
-                  <p className={`text-lg font-semibold ${isToday ? 'text-primary-700' : 'text-gray-800'}`}>
+                <div className={`px-3 py-2.5 border-b border-gray-100 text-center ${isToday ? 'bg-primary-600' : 'bg-gray-50'}`}>
+                  <p className={`text-xs font-bold ${isToday ? 'text-primary-100' : 'text-gray-600'}`}>{day}</p>
+                  <div className={`mx-auto my-0.5 w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold ${isToday ? 'bg-white text-primary-600' : 'text-gray-800'}`}>
                     {date.getDate()}
-                  </p>
-                  <p className="text-xs text-gray-400">{date.toLocaleDateString('fr-FR', { month: 'short' })}</p>
+                  </div>
+                  <p className={`text-xs ${isToday ? 'text-primary-200' : 'text-gray-400'}`}>{date.toLocaleDateString('fr-FR', { month: 'short' })}</p>
                 </div>
 
                 {/* Content */}
