@@ -163,10 +163,22 @@ const WeekNav = ({ weekStart, onPrev, onNext, onToday }: {
 };
 
 // ─── Timetable view ──────────────────────────────
-const Timetable = ({ showExams = false }: { showExams?: boolean }) => {
+const Timetable = ({ showExams = false, weekStart }: { showExams?: boolean; weekStart?: Date }) => {
   const today = new Date().getDay();
+
+  // Filter exams: if weekStart provided, only show exams for that week
+  const visibleExams = showExams
+    ? (weekStart
+        ? exams.filter(e => {
+            const d = new Date(e.date + 'T00:00:00');
+            const weekEnd = addDays(weekStart, 4);
+            return d >= weekStart && d <= weekEnd;
+          })
+        : exams)
+    : [];
+
   const examsByWeekday: Record<number, (Exam & { _slot: { start: number; end: number } })[]> = {};
-  exams.forEach(e => {
+  visibleExams.forEach(e => {
     const d = new Date(e.date + 'T00:00:00');
     const slot = getSubjectSlot(e.subject);
     if (!slot) return;
@@ -704,6 +716,22 @@ const RevisionView = () => {
   );
 };
 
+// ─── Combined view with week navigation ──────────
+const CombinedView = () => {
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  return (
+    <div>
+      <WeekNav
+        weekStart={weekStart}
+        onPrev={() => setWeekStart(prev => addDays(prev, -7))}
+        onNext={() => setWeekStart(prev => addDays(prev, 7))}
+        onToday={() => setWeekStart(getMonday(new Date()))}
+      />
+      <Timetable showExams weekStart={weekStart} />
+    </div>
+  );
+};
+
 // ─── Main component ──────────────────────────────
 type Tab = 'timetable' | 'exams' | 'combined' | 'revisions';
 
@@ -749,7 +777,7 @@ export const Schedule = () => {
 
         {activeTab === 'timetable' && <Timetable />}
         {activeTab === 'exams'     && <ExamList />}
-        {activeTab === 'combined'  && <Timetable showExams />}
+        {activeTab === 'combined'  && <CombinedView />}
         {activeTab === 'revisions' && <RevisionView />}
       </div>
     </Layout>
