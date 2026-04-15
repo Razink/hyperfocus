@@ -32,5 +32,19 @@ services:
       - ./uploads:/app/uploads
     command: npm run dev
 
+  frontend:
+    build: ../frontend
+    container_name: hyperfocus-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: http://localhost:3000/api
+    volumes:
+      - ../frontend/src:/app/src
+      - ../frontend/public:/app/public
+
 volumes:
   postgres_data:

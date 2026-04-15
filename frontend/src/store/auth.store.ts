@@ -7,8 +7,8 @@ interface AuthState {
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  login: (identifier: string, password: string) => Promise<void>;
+  register: (name: string, password: string, username?: string, email?: string) => Promise<void>;
   logout: () => void;
   checkAuth: () => Promise<void>;
 }
@@ -19,10 +19,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   error: null,
 
-  login: async (email: string, password: string) => {
+  login: async (identifier: string, password: string) => {
     set({ isLoading: true, error: null });
     try {
-      const { user, token } = await authService.login({ email, password });
+      const { user, token } = await authService.login({ identifier, password });
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, isLoading: false });
@@ -33,10 +33,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  register: async (name: string, email: string, password: string) => {
+  register: async (name: string, password: string, username?: string, email?: string) => {
     set({ isLoading: true, error: null });
     try {
-      const { user, token } = await authService.register({ name, email, password });
+      const { user, token } = await authService.register({ username, name, email: email || undefined, password });
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, isLoading: false });

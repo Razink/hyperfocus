@@ -7,14 +7,18 @@ import { Input } from '../components/Input';
 export const Register = () => {
   const navigate = useNavigate();
   const { register, isLoading, error } = useAuthStore();
+  const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!username && !email) {
+      return;
+    }
     try {
-      await register(name, email, password);
+      await register(name, password, username || undefined, email || undefined);
       navigate('/subjects');
     } catch (err) {
       // Error handled by store
@@ -31,6 +35,14 @@ export const Register = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
+            label="Nom d'utilisateur"
+            type="text"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="nizar"
+          />
+
+          <Input
             label="Prénom"
             type="text"
             value={name}
@@ -40,12 +52,11 @@ export const Register = () => {
           />
 
           <Input
-            label="Email"
+            label="Email (optionnel)"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="ton-email@exemple.com"
-            required
           />
 
           <Input
@@ -55,7 +66,7 @@ export const Register = () => {
             onChange={(e) => setPassword(e.target.value)}
             placeholder="••••••••"
             required
-            minLength={6}
+            minLength={4}
           />
 
           {error && (

@@ -7,13 +7,13 @@ import { Input } from '../components/Input';
 export const Login = () => {
   const navigate = useNavigate();
   const { login, isLoading, error } = useAuthStore();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      await login(identifier, password);
       navigate('/subjects');
     } catch (err) {
       // Error handled by store
@@ -30,11 +30,11 @@ export const Login = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="ton-email@exemple.com"
+            label="Nom d'utilisateur ou email"
+            type="text"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder="nizar ou ton-email@exemple.com"
             required
           />
 
