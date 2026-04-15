@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, BookOpen, CheckCircle2, LogOut } from 'lucide-react';
+import { Plus, BookOpen, CheckCircle2 } from 'lucide-react';
 import type { Subject } from '../types';
 import { subjectService } from '../services/subject.service';
 import { useAuthStore } from '../store/auth.store';
+import { Layout } from '../components/Layout';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
@@ -23,7 +24,6 @@ const COLORS = [
 
 export const Subjects = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuthStore();
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -83,31 +83,22 @@ export const Subjects = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Chargement...</p>
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 font-display">Mes Matières</h1>
-            <p className="text-gray-600 text-sm">Bonjour {user?.name} 👋</p>
-          </div>
-          <button
-            onClick={logout}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            title="Déconnexion"
-          >
-            <LogOut className="w-5 h-5 text-gray-600" />
-          </button>
+    <Layout>
+      <div className="p-8">
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 font-display">Mes Matières</h2>
+          <p className="text-gray-500 mt-1">Gérez vos matières et suivez votre progression</p>
         </div>
-      </header>
-
-      <main className="max-w-4xl mx-auto px-4 py-6">
+        <div className="max-w-4xl">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {subjects.map((subject) => (
             <Card
@@ -165,7 +156,8 @@ export const Subjects = () => {
             <span className="text-gray-600 font-medium">Ajouter une matière</span>
           </button>
         </div>
-      </main>
+        </div>
+      </div>
 
       <Modal
         isOpen={isModalOpen}
@@ -231,6 +223,6 @@ export const Subjects = () => {
           )}
         </form>
       </Modal>
-    </div>
+    </Layout>
   );
 };
