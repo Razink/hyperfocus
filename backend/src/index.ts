@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import authRoutes from './routes/auth.routes';
 import subjectRoutes from './routes/subject.routes';
 import lessonRoutes from './routes/lesson.routes';
+import revisionRoutes from './routes/revision.routes';
 
 dotenv.config();
 
@@ -21,6 +22,7 @@ app.get('/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/lessons', lessonRoutes);
+app.use('/api/revisions', revisionRoutes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
