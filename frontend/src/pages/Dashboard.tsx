@@ -85,10 +85,10 @@ export const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="p-8">
+      <div className="px-4 pb-24 pt-5 sm:px-6 md:p-8">
         {/* Header */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 font-display">
+          <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">
             Bonjour {user?.name} 👋
           </h2>
           <p className="text-gray-500 mt-1">Voici un résumé de ta progression</p>
@@ -99,14 +99,14 @@ export const Dashboard = () => {
           {loading
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
             : stats.map(({ label, value, icon: Icon, light, sub }) => (
-              <div key={label} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-500 font-medium">{label}</span>
+              <div key={label} className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 sm:p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <span className="text-sm text-gray-500 font-medium leading-snug">{label}</span>
                   <span className={`p-2 rounded-lg ${light}`}>
                     <Icon className="w-4 h-4" />
                   </span>
                 </div>
-                <p className="text-3xl font-bold text-gray-900 font-display">{value}</p>
+                <p className="break-words text-2xl font-bold text-gray-900 font-display sm:text-3xl">{value}</p>
                 <p className="text-xs text-gray-400 mt-1">{sub}</p>
               </div>
             ))
@@ -115,7 +115,7 @@ export const Dashboard = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent activity */}
-          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Activité récente</h3>
             {loading ? (
               <div className="space-y-4">
@@ -141,7 +141,7 @@ export const Dashboard = () => {
             ) : (
               <div className="space-y-4">
                 {data?.recentActivity.map((item, i) => (
-                  <div key={i} className="flex items-center gap-4">
+                  <div key={i} className="flex items-start gap-3 sm:items-center sm:gap-4">
                     <div
                       className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: item.subjectColor }}
@@ -156,7 +156,7 @@ export const Dashboard = () => {
                         {item.type === 'revised' ? '✓ Cours révisé' : '+ Nouveau cours'}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-400 shrink-0">{timeAgo(item.date)}</span>
+                    <span className="text-xs text-gray-400 shrink-0 pt-0.5 sm:pt-0">{timeAgo(item.date)}</span>
                   </div>
                 ))}
               </div>
@@ -164,7 +164,7 @@ export const Dashboard = () => {
           </div>
 
           {/* Subject breakdown */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Matières</h3>
               <Link to="/subjects" className="text-xs text-primary-600 hover:underline">Voir tout</Link>

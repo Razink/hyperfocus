@@ -21,8 +21,20 @@ else
   echo "No Prisma migrations directory found, skipping database migrations."
 fi
 
-echo "Checking backend health..."
-curl --fail --silent --show-error http://127.0.0.1:3000/health
-echo
+echo "Waiting for backend health..."
+for attempt in $(seq 1 30); do
+  if curl --fail --silent --show-error http://127.0.0.1:3000/health; then
+    echo
+    echo "Backend is healthy."
+    echo "Deployment complete."
+    exit 0
+  fi
 
-echo "Deployment complete."
+  echo "Backend not ready yet, retrying ($attempt/30)..."
+  sleep 2
+done
+
+echo "Backend healthcheck failed after 60 seconds."
+docker compose ps
+docker compose logs --tail=120 backend
+exit 1

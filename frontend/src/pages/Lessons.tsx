@@ -9,6 +9,7 @@ import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
 import { Input } from '../components/Input';
 import { ProgressBar } from '../components/ProgressBar';
+import { Layout } from '../components/Layout';
 
 export const Lessons = () => {
   const { subjectId } = useParams<{ subjectId: string }>();
@@ -103,18 +104,21 @@ export const Lessons = () => {
 
   if (loading || !data) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-600">Chargement...</p>
-      </div>
+      <Layout>
+        <div className="flex h-64 items-center justify-center">
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </Layout>
     );
   }
 
   const API_URL = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3000';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+    <Layout>
+      <div className="min-h-screen bg-gray-50 pb-24 md:pb-0">
+      <header className="sticky top-16 z-10 border-b border-gray-200 bg-white md:top-0">
+        <div className="mx-auto max-w-4xl px-4 py-4 sm:px-6">
           <button
             onClick={() => navigate('/subjects')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-2"
@@ -123,7 +127,7 @@ export const Lessons = () => {
             <span>Retour</span>
           </button>
           <h1
-            className="text-2xl font-bold font-display"
+            className="break-words text-2xl font-bold font-display sm:text-3xl"
             style={{ color: data.subject.color }}
           >
             {data.subject.name}
@@ -132,29 +136,29 @@ export const Lessons = () => {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-6">
+      <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
         <div className="space-y-4">
           {data.lessons.map((lesson) => (
             <Card key={lesson.id} color={data.subject.color}>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
                 <div className="flex-shrink-0">
                   {lesson.screenshotUrl ? (
                     <img
                       src={`${API_URL}${lesson.screenshotUrl}`}
                       alt={lesson.title}
-                      className="w-24 h-24 object-cover rounded-lg cursor-pointer hover:opacity-80 transition-opacity"
+                      className="h-40 w-full cursor-pointer rounded-lg object-cover transition-opacity hover:opacity-80 sm:h-24 sm:w-24"
                       onClick={() => window.open(`${API_URL}${lesson.screenshotUrl}`, '_blank')}
                     />
                   ) : (
-                    <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="flex h-28 w-full items-center justify-center rounded-lg bg-gray-100 sm:h-24 sm:w-24">
                       <ImageIcon className="w-8 h-8 text-gray-400" />
                     </div>
                   )}
                 </div>
 
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">{lesson.title}</h3>
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <h3 className="min-w-0 break-words text-lg font-semibold text-gray-900">{lesson.title}</h3>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleOpenModal(lesson)}
@@ -184,7 +188,7 @@ export const Lessons = () => {
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-sm">
+                  <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
                     <span className="font-medium" style={{ color: data.subject.color }}>
                       {lesson.contentPercent}% écrit
                     </span>
@@ -263,7 +267,7 @@ export const Lessons = () => {
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex flex-col gap-2 pt-4 sm:flex-row">
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)} fullWidth>
               Annuler
             </Button>
@@ -287,6 +291,7 @@ export const Lessons = () => {
           )}
         </form>
       </Modal>
-    </div>
+      </div>
+    </Layout>
   );
 };
