@@ -4,10 +4,10 @@ GitHub Actions deploys `master` through `.github/workflows/deploy.yml`.
 
 Required repository secrets:
 
-- `DEPLOY_HOST`: server hostname or IP address.
-- `DEPLOY_USER`: SSH user on the server.
-- `DEPLOY_SSH_KEY`: private SSH key allowed to connect as `DEPLOY_USER`.
+- `DEPLOY_SSH_KEY`: private SSH key allowed to connect as `root`.
 - `DEPLOY_PATH`: absolute path to the checked out repo on the server, for example `/home/claude/workspace/hyperfocus`.
+
+The workflow connects to `root@hyperfocus.kortaix.cloud`.
 
 The remote server must already have:
 

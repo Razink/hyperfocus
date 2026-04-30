@@ -27,15 +27,11 @@ jobs:
       - name: Trust deploy host
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          ssh-keyscan -H hyperfocus.kortaix.cloud >> ~/.ssh/known_hosts
 
       - name: Deploy
         run: |
-          ssh "$DEPLOY_USER@$DEPLOY_HOST" \
+          ssh root@hyperfocus.kortaix.cloud \
             "cd '$DEPLOY_PATH' && bash scripts/deploy.sh"
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
