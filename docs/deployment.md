@@ -5,15 +5,15 @@ GitHub Actions deploys `master` through `.github/workflows/deploy.yml`.
 Required repository secrets:
 
 - `SSH_PRIVATE_KEY`: private SSH key allowed to connect as `root`.
-- `DEPLOY_PATH`: absolute path to the checked out repo on the server, for example `/home/claude/workspace/hyperfocus`.
 
-The workflow connects to `root@hyperfocus.kortaix.cloud`.
+The workflow connects to `root@hyperfocus.kortaix.cloud` and deploys
+`/home/claude/workspace/hyperfocus`.
 
 The remote server must already have:
 
 - Docker and Docker Compose.
 - Git.
-- The Hyperfocus repository checked out at `DEPLOY_PATH`.
+- The Hyperfocus repository checked out at `/home/claude/workspace/hyperfocus`.
 - Nginx already configured to route `hyperfocus.kortaix.cloud` to the app ports.
 
 The deploy script runs Prisma migrations only when `backend/prisma/migrations`
