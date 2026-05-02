@@ -580,11 +580,13 @@ export const AssessmentSection = ({
   subjectColor,
   lessons,
   trimesterFilter = 'all',
+  createRequest = 0,
 }: {
   subjectId: string;
   subjectColor: string;
   lessons: Lesson[];
   trimesterFilter?: 'all' | 1 | 2 | 3;
+  createRequest?: number;
 }) => {
   const [data, setData] = useState<AssessmentGrouped | null>(null);
   const [selected, setSelected] = useState<Assessment | null>(null);
@@ -594,6 +596,12 @@ export const AssessmentSection = ({
   useEffect(() => {
     assessmentService.getBySubject(subjectId).then(setData);
   }, [subjectId]);
+
+  useEffect(() => {
+    if (createRequest <= 0) return;
+    setCreateTrimester(trimesterFilter === 'all' ? 1 : trimesterFilter);
+    setIsCreateOpen(true);
+  }, [createRequest, trimesterFilter]);
 
   const handleUpdated = (updated: Assessment) => {
     setData(d => {

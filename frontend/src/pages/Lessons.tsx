@@ -26,6 +26,7 @@ export const Lessons = () => {
   const [updatingTrimesterId, setUpdatingTrimesterId] = useState<string | null>(null);
   const [isCoursesOpen, setIsCoursesOpen] = useState(true);
   const [isAssessmentsOpen, setIsAssessmentsOpen] = useState(true);
+  const [assessmentCreateRequest, setAssessmentCreateRequest] = useState(0);
 
   // Modal : nouveau cours
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -302,19 +303,32 @@ export const Lessons = () => {
           </section>
 
           <section className="mt-8">
-            <button
-              type="button"
-              onClick={() => setIsAssessmentsOpen(open => !open)}
-              className="mb-4 flex w-full items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-left shadow-sm hover:bg-gray-50"
-            >
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">Devoirs</h2>
-                <p className="text-sm text-gray-500">
-                  {trimesterFilter === 'all' ? 'Tous les trimestres' : `Trimestre ${trimesterFilter}`}
-                </p>
-              </div>
-              <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${isAssessmentsOpen ? 'rotate-180' : ''}`} />
-            </button>
+            <div className="mb-4 flex flex-col gap-3 rounded-xl border border-gray-100 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <button
+                type="button"
+                onClick={() => setIsAssessmentsOpen(open => !open)}
+                className="flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+              >
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">Devoirs</h2>
+                  <p className="text-sm text-gray-500">
+                    {trimesterFilter === 'all' ? 'Tous les trimestres' : `Trimestre ${trimesterFilter}`}
+                  </p>
+                </div>
+                <ChevronDown className={`h-5 w-5 shrink-0 text-gray-400 transition-transform ${isAssessmentsOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsAssessmentsOpen(true);
+                  setAssessmentCreateRequest(value => value + 1);
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+              >
+                <Plus className="h-4 w-4" />
+                Ajouter un devoir
+              </button>
+            </div>
 
             {isAssessmentsOpen && (
               <AssessmentSection
@@ -322,6 +336,7 @@ export const Lessons = () => {
                 subjectColor={data.subject.color}
                 lessons={data.lessons}
                 trimesterFilter={trimesterFilter}
+                createRequest={assessmentCreateRequest}
               />
             )}
           </section>
