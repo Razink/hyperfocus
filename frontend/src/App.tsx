@@ -5,6 +5,7 @@ import { Dashboard } from './pages/Dashboard';
 import { Schedule } from './pages/Schedule';
 import { Subjects } from './pages/Subjects';
 import { Lessons } from './pages/Lessons';
+import { LessonEdit } from './pages/LessonEdit';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -42,6 +43,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Lessons />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/lessons/:id/edit"
+          element={
+            <ProtectedRoute>
+              <LessonEdit />
             </ProtectedRoute>
           }
         />

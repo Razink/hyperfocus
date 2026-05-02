@@ -1,13 +1,18 @@
 import api from './api';
-import type { Lesson } from '../types';
+import type { Lesson, LessonDetail } from '../types';
 
 export const lessonService = {
+  async getById(id: string): Promise<LessonDetail> {
+    const response = await api.get<LessonDetail>(`/lessons/${id}`);
+    return response.data;
+  },
+
   async create(subjectId: string, data: { title: string; contentPercent?: number }): Promise<Lesson> {
     const response = await api.post<Lesson>(`/subjects/${subjectId}/lessons`, data);
     return response.data;
   },
 
-  async update(id: string, data: Partial<{ title: string; contentPercent: number }>): Promise<Lesson> {
+  async update(id: string, data: Partial<{ title: string; contentPercent: number; isRevised: boolean }>): Promise<Lesson> {
     const response = await api.put<Lesson>(`/lessons/${id}`, data);
     return response.data;
   },

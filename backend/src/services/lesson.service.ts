@@ -8,7 +8,8 @@ const createLessonSchema = z.object({
 
 const updateLessonSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  contentPercent: z.number().min(0).max(100).optional()
+  contentPercent: z.number().min(0).max(100).optional(),
+  isRevised: z.boolean().optional()
 });
 
 const revisedSchema = z.object({
@@ -110,10 +111,14 @@ export class LessonService {
     }
 
     const validated = updateLessonSchema.parse(data);
+    const updateData: any = { ...validated };
+    if (validated.isRevised !== undefined) {
+      updateData.revisedAt = validated.isRevised ? new Date() : null;
+    }
 
     const updated = await prisma.lesson.update({
       where: { id },
-      data: validated
+      data: updateData
     });
 
     return updated;
