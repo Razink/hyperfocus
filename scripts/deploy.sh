@@ -16,9 +16,10 @@ docker compose up -d --build
 
 if [ -d "$COMPOSE_DIR/prisma/migrations" ]; then
   echo "Applying database migrations..."
-  # If any migration is marked as failed, roll it back so it can be retried
-  docker compose exec -T backend npx prisma migrate resolve --rolled-back 20260430160535_add_resources_assessments 2>/dev/null || true
-  docker compose exec -T backend npx prisma migrate deploy
+  # Clear any failed migration entries so they can be retried
+  docker compose exec -T db psql -U hyperfocus -d hyperfocus \
+    -c "DELETE FROM _prisma_migrations WHERE finished_at IS NULL;" 2>/dev/null || true
+  docker compose exec -T backend ./node_modules/.bin/prisma migrate deploy
 else
   echo "No Prisma migrations directory found, skipping database migrations."
 fi
