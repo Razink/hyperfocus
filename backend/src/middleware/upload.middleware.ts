@@ -46,8 +46,38 @@ export const uploadDoc = multer({
   }
 });
 
+export const uploadAssessmentDoc = multer({
+  storage: makeStorage('uploads/assessment-docs'),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      'text/html',
+      'application/xhtml+xml'
+    ];
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error('Seuls PDF, DOC, DOCX, PPT, PPTX et HTML sont autorisés'));
+  }
+});
+
 export const uploadImage = multer({
   storage: makeStorage('uploads/lesson-images'),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error('Seuls JPG, PNG et WEBP sont autorisés'));
+  }
+});
+
+export const uploadAssessmentImage = multer({
+  storage: makeStorage('uploads/assessment-images'),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];

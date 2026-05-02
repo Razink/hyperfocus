@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import fs from 'fs';
+import path from 'path';
 import prisma from '../utils/prisma';
 
 const ASSESSMENT_SLOTS = [
@@ -24,6 +26,19 @@ const setLessonsSchema = z.object({
   lessonIds: z.array(z.string().uuid()),
 });
 
+const linkSchema = z.object({
+  url: z.string().url().max(2000),
+  title: z.string().min(1).max(200).optional(),
+});
+
+function domainFromUrl(url: string) {
+  try {
+    return new URL(url).hostname;
+  } catch {
+    return url;
+  }
+}
+
 async function verifyOwnership(id: string, userId: string) {
   const assessment = await prisma.assessment.findFirst({
     where: { id, subject: { userId } },
@@ -34,6 +49,28 @@ async function verifyOwnership(id: string, userId: string) {
     throw err;
   }
   return assessment;
+}
+
+async function verifyResourceOwnership(resourceId: string, userId: string) {
+  const resource = await prisma.assessmentResource.findFirst({
+    where: { id: resourceId, assessment: { subject: { userId } } },
+    include: {
+      assessment: {
+        select: {
+          id: true,
+          kind: true,
+          trimester: true,
+          subject: { select: { id: true, name: true, color: true } }
+        }
+      }
+    }
+  });
+  if (!resource) {
+    const err: any = new Error('Ressource de devoir non trouvée');
+    err.status = 404; err.code = 'ASSESSMENT_RESOURCE_NOT_FOUND';
+    throw err;
+  }
+  return resource;
 }
 
 export class AssessmentService {
@@ -61,6 +98,7 @@ export class AssessmentService {
             lesson: { select: { id: true, title: true, contentPercent: true, isRevised: true } },
           },
         },
+        resources: { orderBy: { order: 'asc' } },
       },
       orderBy: [{ trimester: 'asc' }, { kind: 'asc' }],
     });
@@ -82,6 +120,7 @@ export class AssessmentService {
             lesson: { select: { id: true, title: true, contentPercent: true, isRevised: true } },
           },
         },
+        resources: { orderBy: { order: 'asc' } },
       },
     });
     if (!assessment) {
@@ -125,6 +164,83 @@ export class AssessmentService {
     ]);
 
     return this.getById(id, userId);
+  }
+
+  async getResourceById(resourceId: string, userId: string) {
+    return verifyResourceOwnership(resourceId, userId);
+  }
+
+  async addResourceLink(assessmentId: string, userId: string, body: unknown) {
+    await verifyOwnership(assessmentId, userId);
+    const { url, title } = linkSchema.parse(body);
+    const maxOrder = await prisma.assessmentResource.findFirst({
+      where: { assessmentId, type: 'LINK' },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+
+    return prisma.assessmentResource.create({
+      data: {
+        assessmentId,
+        type: 'LINK',
+        url,
+        title: title || domainFromUrl(url),
+        order: (maxOrder?.order ?? 0) + 1,
+      },
+    });
+  }
+
+  async addResourceDoc(assessmentId: string, userId: string, file: Express.Multer.File, title?: string) {
+    await verifyOwnership(assessmentId, userId);
+    const maxOrder = await prisma.assessmentResource.findFirst({
+      where: { assessmentId, type: 'DOC' },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+
+    return prisma.assessmentResource.create({
+      data: {
+        assessmentId,
+        type: 'DOC',
+        url: `/uploads/assessment-docs/${file.filename}`,
+        title: title || file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        order: (maxOrder?.order ?? 0) + 1,
+      },
+    });
+  }
+
+  async addResourceImage(assessmentId: string, userId: string, file: Express.Multer.File, title?: string) {
+    await verifyOwnership(assessmentId, userId);
+    const maxOrder = await prisma.assessmentResource.findFirst({
+      where: { assessmentId, type: 'IMAGE' },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+
+    return prisma.assessmentResource.create({
+      data: {
+        assessmentId,
+        type: 'IMAGE',
+        url: `/uploads/assessment-images/${file.filename}`,
+        title: title || file.originalname,
+        mimeType: file.mimetype,
+        fileSize: file.size,
+        order: (maxOrder?.order ?? 0) + 1,
+      },
+    });
+  }
+
+  async deleteResource(resourceId: string, userId: string) {
+    const resource = await verifyResourceOwnership(resourceId, userId);
+    if (resource.type !== 'LINK' && resource.url) {
+      const filePath = path.join(process.cwd(), resource.url);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
+    await prisma.assessmentResource.delete({ where: { id: resourceId } });
+    return { message: 'Ressource supprimée' };
   }
 
   async getUpcoming(userId: string) {

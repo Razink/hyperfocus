@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, CheckCircle2, Circle, Image as ImageIcon, Download, Pencil } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, ChevronDown, Circle, Image as ImageIcon, Download, Pencil } from 'lucide-react';
 import type { Lesson, SubjectDetail } from '../types';
 import { subjectService } from '../services/subject.service';
 import { lessonService } from '../services/lesson.service';
@@ -24,6 +24,8 @@ export const Lessons = () => {
   const [loading, setLoading] = useState(true);
   const [trimesterFilter, setTrimesterFilter] = useState<'all' | 1 | 2 | 3>('all');
   const [updatingTrimesterId, setUpdatingTrimesterId] = useState<string | null>(null);
+  const [isCoursesOpen, setIsCoursesOpen] = useState(true);
+  const [isAssessmentsOpen, setIsAssessmentsOpen] = useState(true);
 
   // Modal : nouveau cours
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -176,8 +178,22 @@ export const Lessons = () => {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-            {filteredLessons.map((lesson: Lesson) => {
+          <section>
+            <button
+              type="button"
+              onClick={() => setIsCoursesOpen(open => !open)}
+              className="mb-4 flex w-full items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-left shadow-sm hover:bg-gray-50"
+            >
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Cours</h2>
+                <p className="text-sm text-gray-500">{filteredLessons.length} cours affiché{filteredLessons.length > 1 ? 's' : ''}</p>
+              </div>
+              <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${isCoursesOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isCoursesOpen && (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                {filteredLessons.map((lesson: Lesson) => {
               const lessonColor = lesson.color || data.subject.color;
               return (
                 <Card key={lesson.id} color={lessonColor} className="h-full">
@@ -272,23 +288,43 @@ export const Lessons = () => {
                   </div>
                 </Card>
               );
-            })}
+                })}
 
+                <button
+                  onClick={() => setIsCreateOpen(true)}
+                  className="min-h-[250px] w-full bg-white border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
+                >
+                  <Plus className="w-6 h-6 text-gray-400" />
+                  <span className="text-gray-600 font-medium">Ajouter un cours</span>
+                </button>
+              </div>
+            )}
+          </section>
+
+          <section className="mt-8">
             <button
-              onClick={() => setIsCreateOpen(true)}
-              className="min-h-[250px] w-full bg-white border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
+              type="button"
+              onClick={() => setIsAssessmentsOpen(open => !open)}
+              className="mb-4 flex w-full items-center justify-between rounded-xl border border-gray-100 bg-white px-4 py-3 text-left shadow-sm hover:bg-gray-50"
             >
-              <Plus className="w-6 h-6 text-gray-400" />
-              <span className="text-gray-600 font-medium">Ajouter un cours</span>
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Devoirs</h2>
+                <p className="text-sm text-gray-500">
+                  {trimesterFilter === 'all' ? 'Tous les trimestres' : `Trimestre ${trimesterFilter}`}
+                </p>
+              </div>
+              <ChevronDown className={`h-5 w-5 text-gray-400 transition-transform ${isAssessmentsOpen ? 'rotate-180' : ''}`} />
             </button>
-          </div>
 
-          {/* Section devoirs */}
-          <AssessmentSection
-            subjectId={data.subject.id}
-            subjectColor={data.subject.color}
-            lessons={data.lessons}
-          />
+            {isAssessmentsOpen && (
+              <AssessmentSection
+                subjectId={data.subject.id}
+                subjectColor={data.subject.color}
+                lessons={data.lessons}
+                trimesterFilter={trimesterFilter}
+              />
+            )}
+          </section>
         </main>
 
         {/* Modal nouveau cours */}

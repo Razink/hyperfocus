@@ -1,14 +1,131 @@
 import { useEffect, useState } from 'react';
-import { ClipboardList, CheckCircle2, X, Calendar } from 'lucide-react';
-import type { Assessment, AssessmentGrouped, Lesson } from '../types';
+import {
+  Calendar, CheckCircle2, ClipboardList, ExternalLink, FileCode2, FileText,
+  Link2, Upload, X
+} from 'lucide-react';
+import type { Assessment, AssessmentGrouped, AssessmentResource, Lesson } from '../types';
 import { assessmentService } from '../services/assessment.service';
 import { ProgressBar } from './ProgressBar';
+
+const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') ?? 'http://localhost:3000';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const fmtDate = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : null;
 
 const kindLabel: Record<string, string> = { DC1: 'DC 1', DC2: 'DC 2', DS1: 'DS 1' };
+
+const fileSize = (bytes?: number) => {
+  if (!bytes) return '';
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} Mo`;
+};
+
+const isHtmlResource = (resource: AssessmentResource) =>
+  resource.mimeType?.includes('html') || /\.html?$/i.test(resource.url);
+
+const getFileLabel = (resource: AssessmentResource) => {
+  if (resource.type === 'IMAGE') return 'Image';
+  if (isHtmlResource(resource)) return 'HTML';
+  if (resource.mimeType?.includes('pdf')) return 'PDF';
+  if (resource.mimeType?.includes('powerpoint') || resource.mimeType?.includes('presentation')) return 'PPT';
+  if (resource.mimeType?.includes('word')) return 'Word';
+  return 'Doc';
+};
+
+const AssessmentResourceGrid = ({
+  resources,
+  onDelete,
+}: {
+  resources: AssessmentResource[];
+  onDelete: (id: string) => void;
+}) => {
+  const [lightbox, setLightbox] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightbox(null); };
+    document.addEventListener('keydown', h);
+    return () => document.removeEventListener('keydown', h);
+  }, [lightbox]);
+
+  const openResource = (resource: AssessmentResource) => {
+    const url = resource.url.startsWith('/uploads') ? `${API_URL}${resource.url}` : resource.url;
+    if (resource.type === 'IMAGE') {
+      setLightbox(url);
+      return;
+    }
+    if (resource.type === 'LINK') {
+      window.open(url, '_blank', 'noopener');
+      return;
+    }
+    window.open(isHtmlResource(resource) ? `/assessment-resources/${resource.id}/view` : url, '_blank', 'noopener');
+  };
+
+  if (resources.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
+        Aucune pièce jointe.
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {resources.map(resource => {
+          const url = resource.url.startsWith('/uploads') ? `${API_URL}${resource.url}` : resource.url;
+          return (
+            <div
+              key={resource.id}
+              onClick={() => openResource(resource)}
+              className="group relative cursor-pointer overflow-hidden rounded-lg border border-gray-100 bg-gray-50"
+            >
+              {resource.type === 'IMAGE' ? (
+                <img src={url} alt={resource.title} className="h-24 w-full object-cover" />
+              ) : (
+                <div className="flex h-24 flex-col items-center justify-center gap-2 bg-white">
+                  {resource.type === 'LINK'
+                    ? <ExternalLink className="h-8 w-8 text-sky-500" />
+                    : isHtmlResource(resource)
+                      ? <FileCode2 className="h-8 w-8 text-emerald-500" />
+                      : <FileText className="h-8 w-8 text-blue-500" />
+                  }
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                    {resource.type === 'LINK' ? 'Lien' : getFileLabel(resource)}
+                  </span>
+                </div>
+              )}
+              <div className="px-2 py-1.5">
+                <p className="truncate text-xs font-medium text-gray-700">{resource.title}</p>
+                {resource.fileSize && <p className="text-[11px] text-gray-400">{fileSize(resource.fileSize)}</p>}
+              </div>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  onDelete(resource.id);
+                }}
+                className="absolute right-1 top-1 rounded-full bg-black/50 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                aria-label="Supprimer la pièce jointe"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      {lightbox && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 p-4" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="" className="max-h-full max-w-full rounded-lg object-contain shadow-2xl" onClick={e => e.stopPropagation()} />
+          <button onClick={() => setLightbox(null)} className="absolute right-4 top-4 rounded-full bg-black/40 p-1.5 text-white/80 hover:text-white">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+      )}
+    </>
+  );
+};
 
 // ── Assessment detail modal ───────────────────────────────────────────────────
 const AssessmentModal = ({
@@ -28,7 +145,17 @@ const AssessmentModal = ({
   const [selected, setSelected] = useState<Set<string>>(
     new Set(assessment.lessons.map(al => al.lesson.id))
   );
+  const [resources, setResources] = useState<AssessmentResource[]>(assessment.resources ?? []);
+  const [addingLink, setAddingLink] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setResources(assessment.resources ?? []);
+    setSelected(new Set(assessment.lessons.map(al => al.lesson.id)));
+  }, [assessment]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -54,6 +181,38 @@ const AssessmentModal = ({
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleAddLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const created = await assessmentService.addLink(assessment.id, { url: linkUrl, title: linkTitle || undefined });
+    setResources(current => [...current, created]);
+    setLinkUrl('');
+    setLinkTitle('');
+    setAddingLink(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    setUploading(true);
+    try {
+      const uploaded: AssessmentResource[] = [];
+      for (const file of Array.from(e.target.files)) {
+        uploaded.push(file.type.startsWith('image/')
+          ? await assessmentService.addImage(assessment.id, file)
+          : await assessmentService.addDoc(assessment.id, file)
+        );
+      }
+      setResources(current => [...current, ...uploaded]);
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteResource = async (resourceId: string) => {
+    await assessmentService.deleteResource(resourceId);
+    setResources(current => current.filter(resource => resource.id !== resourceId));
   };
 
   const lessons = assessment.lessons.map(al => al.lesson);
@@ -93,7 +252,7 @@ const AssessmentModal = ({
                 tab === t ? 'border-primary-600 text-primary-600' : 'border-transparent text-gray-400 hover:text-gray-600'
               }`}
             >
-              {t === 'detail' ? 'Cours affectés' : 'Gérer les cours'}
+              {t === 'detail' ? 'Détail' : 'Gérer les cours'}
             </button>
           ))}
         </div>
@@ -136,6 +295,65 @@ const AssessmentModal = ({
                   </ul>
                 </>
               )}
+              <div className="mt-5 border-t border-gray-100 pt-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900">Pièces jointes</h3>
+                    <p className="text-xs text-gray-500">Liens, PDF, PowerPoint, Word, HTML, images.</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setAddingLink(value => !value)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      Lien
+                    </button>
+                    <label className="inline-flex cursor-pointer items-center gap-1 rounded-lg bg-primary-600 px-2.5 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
+                      <Upload className="h-3.5 w-3.5" />
+                      {uploading ? 'Upload...' : 'Fichier'}
+                      <input
+                        type="file"
+                        multiple
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.html,.htm,image/jpeg,image/png,image/webp"
+                        onChange={handleFileUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {addingLink && (
+                  <form onSubmit={handleAddLink} className="mb-3 space-y-2 rounded-lg border border-gray-200 p-3">
+                    <input
+                      type="url"
+                      required
+                      value={linkUrl}
+                      onChange={e => setLinkUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                    />
+                    <input
+                      type="text"
+                      value={linkTitle}
+                      onChange={e => setLinkTitle(e.target.value)}
+                      placeholder="Libellé optionnel"
+                      className="w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+                    />
+                    <div className="flex gap-2">
+                      <button type="submit" className="flex-1 rounded-md bg-primary-600 py-1.5 text-xs font-medium text-white hover:bg-primary-700">
+                        Ajouter
+                      </button>
+                      <button type="button" onClick={() => setAddingLink(false)} className="rounded-md border border-gray-200 px-3 py-1.5 text-xs">
+                        Annuler
+                      </button>
+                    </div>
+                  </form>
+                )}
+
+                <AssessmentResourceGrid resources={resources} onDelete={handleDeleteResource} />
+              </div>
             </>
           ) : (
             <>
@@ -214,6 +432,10 @@ const AssessmentCard = ({
       </div>
       <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
         <span>{lessons.length} cours</span>
+        {(assessment.resources?.length ?? 0) > 0 && <>
+          <span>·</span>
+          <span>{assessment.resources?.length} fichier{(assessment.resources?.length ?? 0) > 1 ? 's' : ''}</span>
+        </>}
         {lessons.length > 0 && <>
           <span>·</span>
           <span>{revisedCount}/{lessons.length} révisés</span>
@@ -231,10 +453,12 @@ export const AssessmentSection = ({
   subjectId,
   subjectColor,
   lessons,
+  trimesterFilter = 'all',
 }: {
   subjectId: string;
   subjectColor: string;
   lessons: Lesson[];
+  trimesterFilter?: 'all' | 1 | 2 | 3;
 }) => {
   const [data, setData] = useState<AssessmentGrouped | null>(null);
   const [selected, setSelected] = useState<Assessment | null>(null);
@@ -257,16 +481,15 @@ export const AssessmentSection = ({
 
   if (!data) return null;
 
+  const visibleTrimesters = trimesterFilter === 'all'
+    ? ([1, 2, 3] as const)
+    : ([trimesterFilter] as const);
+
   return (
     <>
-      <section className="mt-8">
-        <div className="flex items-center gap-2 mb-4">
-          <ClipboardList className="w-5 h-5 text-gray-500" />
-          <h2 className="text-lg font-semibold text-gray-900">Devoirs</h2>
-        </div>
-
+      <section>
         <div className="space-y-6">
-          {([1, 2, 3] as const).map(t => (
+          {visibleTrimesters.map(t => (
             <div key={t}>
               <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
                 Trimestre {t}

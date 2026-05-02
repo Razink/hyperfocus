@@ -102,9 +102,27 @@ model Assessment {
 
   subject Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   lessons AssessmentLesson[]
+  resources AssessmentResource[]
 
   @@unique([subjectId, trimester, kind])
   @@map("assessments")
+}
+
+model AssessmentResource {
+  id           String       @id @default(uuid())
+  assessmentId String       @map("assessment_id")
+  type         ResourceType
+  title        String
+  url          String
+  mimeType     String?      @map("mime_type")
+  fileSize     Int?         @map("file_size")
+  order        Int          @default(0)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  @@map("assessment_resources")
 }
 
 model AssessmentLesson {

@@ -34,6 +34,19 @@ export interface LessonResource {
   updatedAt: string;
 }
 
+export interface AssessmentResource {
+  id: string;
+  assessmentId: string;
+  type: ResourceType;
+  title: string;
+  url: string;
+  mimeType?: string;
+  fileSize?: number;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Lesson {
   id: string;
   subjectId?: string;
@@ -78,6 +91,7 @@ export interface Assessment {
   date?: string;
   isPast: boolean;
   lessons: { lesson: AssessmentLesson }[];
+  resources?: AssessmentResource[];
 }
 
 export interface AssessmentGrouped {

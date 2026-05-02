@@ -3,7 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, FileCode2 } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { resourceService } from '../services/resource.service';
-import type { LessonResource } from '../types';
+import { assessmentService } from '../services/assessment.service';
+import type { AssessmentResource, LessonResource } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') ?? 'http://localhost:3000';
 
@@ -15,27 +16,47 @@ type ResourceDetail = LessonResource & {
   };
 };
 
-const isHtmlResource = (resource: LessonResource) =>
+type AssessmentResourceDetail = AssessmentResource & {
+  assessment?: {
+    id: string;
+    kind: string;
+    trimester: number;
+    subject: { id: string; name: string; color: string };
+  };
+};
+
+const isHtmlResource = (resource: { mimeType?: string; url: string }) =>
   resource.mimeType?.includes('html') || /\.html?$/i.test(resource.url);
 
 export const ResourceView = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [resource, setResource] = useState<ResourceDetail | null>(null);
+  const isAssessmentResource = window.location.pathname.startsWith('/assessment-resources/');
+  const [resource, setResource] = useState<ResourceDetail | AssessmentResourceDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-    resourceService.getById(id)
-      .then(res => setResource(res as ResourceDetail))
+    const request = isAssessmentResource
+      ? assessmentService.getResourceById(id)
+      : resourceService.getById(id);
+    request
+      .then(res => setResource(res as ResourceDetail | AssessmentResourceDetail))
       .catch(err => setError(err?.response?.data?.error?.message ?? 'Document introuvable'))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, isAssessmentResource]);
 
   const fileUrl = resource ? `${API_URL}${resource.url}` : '';
-  const backUrl = resource?.lesson?.subject.id ? `/subjects/${resource.lesson.subject.id}` : '/subjects';
+  const lessonResource = resource as ResourceDetail | null;
+  const assessmentResource = resource as AssessmentResourceDetail | null;
+  const subject = lessonResource?.lesson
+    ? lessonResource.lesson.subject
+    : assessmentResource?.assessment
+      ? assessmentResource.assessment.subject
+      : null;
+  const backUrl = subject?.id ? `/subjects/${subject.id}` : '/subjects';
 
   return (
     <Layout>
@@ -48,7 +69,7 @@ export const ResourceView = () => {
                 className="mb-2 flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>{resource?.lesson?.subject.name ?? 'Retour'}</span>
+                <span>{subject?.name ?? 'Retour'}</span>
               </button>
               <div className="flex min-w-0 items-center gap-2">
                 <FileCode2 className="h-5 w-5 shrink-0 text-emerald-500" />

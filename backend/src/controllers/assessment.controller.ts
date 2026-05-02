@@ -24,4 +24,29 @@ export class AssessmentController {
 
   setLessons = (req: AuthRequest, res: Response) =>
     handle(() => svc.setLessons(req.params.id as string, req.userId!, req.body), res);
+
+  getResourceById = (req: AuthRequest, res: Response) =>
+    handle(() => svc.getResourceById(req.params.resourceId as string, req.userId!), res);
+
+  addResourceLink = (req: AuthRequest, res: Response) =>
+    handle(() => svc.addResourceLink(req.params.id as string, req.userId!, req.body).then(r => (res.status(201), r)), res);
+
+  addResourceDoc = (req: AuthRequest, res: Response) => {
+    if (!req.file) {
+      res.status(400).json({ error: { code: 'FILE_REQUIRED', message: 'Aucun fichier fourni' } });
+      return;
+    }
+    handle(() => svc.addResourceDoc(req.params.id as string, req.userId!, req.file!, req.body.title).then(r => (res.status(201), r)), res);
+  };
+
+  addResourceImage = (req: AuthRequest, res: Response) => {
+    if (!req.file) {
+      res.status(400).json({ error: { code: 'FILE_REQUIRED', message: 'Aucun fichier fourni' } });
+      return;
+    }
+    handle(() => svc.addResourceImage(req.params.id as string, req.userId!, req.file!, req.body.title).then(r => (res.status(201), r)), res);
+  };
+
+  deleteResource = (req: AuthRequest, res: Response) =>
+    handle(() => svc.deleteResource(req.params.resourceId as string, req.userId!), res);
 }

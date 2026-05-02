@@ -63,6 +63,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/assessment-resources/:id/view"
+          element={
+            <ProtectedRoute>
+              <ResourceView />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </BrowserRouter>
