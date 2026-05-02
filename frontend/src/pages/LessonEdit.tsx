@@ -25,8 +25,6 @@ export const LessonEdit = () => {
     color: LESSON_COLORS[0],
     isRevised: false,
   });
-  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
-  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [uploadingAttachments, setUploadingAttachments] = useState(false);
 
   useEffect(() => {
@@ -40,16 +38,8 @@ export const LessonEdit = () => {
         color: d.color || LESSON_COLORS[0],
         isRevised: d.isRevised,
       });
-      if (d.screenshotUrl) setScreenshotPreview(`${API_URL}${d.screenshotUrl}`);
     }).finally(() => setLoading(false));
   }, [id]);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setScreenshotFile(file);
-    setScreenshotPreview(URL.createObjectURL(file));
-  };
 
   const refreshDetail = async () => {
     if (!id) return;
@@ -86,7 +76,6 @@ export const LessonEdit = () => {
     setSaving(true);
     try {
       await lessonService.update(id, form);
-      if (screenshotFile) await lessonService.uploadScreenshot(id, screenshotFile);
       navigate(`/subjects/${detail?.subject.id}`);
     } finally {
       setSaving(false);
@@ -240,43 +229,6 @@ export const LessonEdit = () => {
               <label htmlFor="isRevised" className="text-sm font-medium text-gray-700">
                 Cours révisé
               </label>
-            </div>
-
-            {/* Cover screenshot */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Image de couverture
-              </label>
-              {screenshotPreview ? (
-                <div className="relative w-32">
-                  <img
-                    src={screenshotPreview}
-                    alt="Cover"
-                    className="w-32 h-20 object-cover rounded-lg border border-gray-200"
-                  />
-                  <label
-                    htmlFor="cover-upload"
-                    className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/40 opacity-0 hover:opacity-100 cursor-pointer transition-opacity"
-                  >
-                    <Upload className="w-5 h-5 text-white" />
-                  </label>
-                </div>
-              ) : (
-                <label
-                  htmlFor="cover-upload"
-                  className="flex w-32 h-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-colors"
-                >
-                  <Upload className="w-5 h-5 text-gray-400" />
-                  <span className="text-xs text-gray-400">Ajouter</span>
-                </label>
-              )}
-              <input
-                id="cover-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
             </div>
 
             <div className="flex flex-col gap-2 pt-2 sm:flex-row">

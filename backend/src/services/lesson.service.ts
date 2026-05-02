@@ -28,6 +28,23 @@ export class LessonService {
       where: { id: subjectId, userId },
       include: {
         lessons: {
+          include: {
+            resources: {
+              orderBy: { order: 'asc' },
+              select: {
+                id: true,
+                lessonId: true,
+                type: true,
+                title: true,
+                url: true,
+                mimeType: true,
+                fileSize: true,
+                order: true,
+                createdAt: true,
+                updatedAt: true
+              }
+            }
+          },
           orderBy: { order: 'asc' }
         }
       }

@@ -342,10 +342,6 @@ const AssessmentModal = ({
   };
 
   const lessons = assessment.lessons.map(al => al.lesson);
-  const revisedCount = lessons.filter(l => l.isRevised).length;
-  const avgPct = lessons.length > 0
-    ? Math.round(lessons.reduce((s, l) => s + l.contentPercent, 0) / lessons.length)
-    : 0;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
@@ -397,28 +393,15 @@ const AssessmentModal = ({
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
-                    <span>{lessons.length} cours</span>
-                    <span>·</span>
-                    <span>{revisedCount} révisé{revisedCount > 1 ? 's' : ''}</span>
-                    <span>·</span>
-                    <span>{avgPct}% moy.</span>
-                  </div>
-                  <ul className="space-y-2">
+                  <div className="rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5">
+                  <ul className="divide-y divide-gray-100">
                     {lessons.map(l => (
-                      <li key={l.id} className="rounded-lg border border-gray-100 p-3">
-                        <div className="flex items-center gap-2 mb-1.5">
-                          {l.isRevised
-                            ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-                            : <div className="w-4 h-4 rounded-full border-2 border-gray-200 shrink-0" />
-                          }
-                          <span className="text-sm font-medium text-gray-800 truncate">{l.title}</span>
-                          <span className="ml-auto text-xs text-gray-400 shrink-0">{l.contentPercent}%</span>
-                        </div>
-                        <ProgressBar value={l.contentPercent} color={color} showLabel={false} size="sm" />
+                      <li key={l.id} className="py-1 text-[13px] font-medium leading-tight text-gray-800">
+                        {l.title}
                       </li>
                     ))}
                   </ul>
+                  </div>
                 </>
               )}
               <div className="mt-5 border-t border-gray-100 pt-4">
@@ -580,28 +563,27 @@ export const AssessmentSection = ({
   subjectColor,
   lessons,
   trimesterFilter = 'all',
-  createRequest = 0,
 }: {
   subjectId: string;
   subjectColor: string;
   lessons: Lesson[];
   trimesterFilter?: 'all' | 1 | 2 | 3;
-  createRequest?: number;
 }) => {
   const [data, setData] = useState<AssessmentGrouped | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Assessment | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [createTrimester, setCreateTrimester] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
-    assessmentService.getBySubject(subjectId).then(setData);
+    setLoading(true);
+    setError(null);
+    assessmentService.getBySubject(subjectId)
+      .then(setData)
+      .catch(err => setError(err?.response?.data?.error?.message ?? 'Impossible de charger les devoirs'))
+      .finally(() => setLoading(false));
   }, [subjectId]);
-
-  useEffect(() => {
-    if (createRequest <= 0) return;
-    setCreateTrimester(trimesterFilter === 'all' ? 1 : trimesterFilter);
-    setIsCreateOpen(true);
-  }, [createRequest, trimesterFilter]);
 
   const handleUpdated = (updated: Assessment) => {
     setData(d => {
@@ -619,62 +601,63 @@ export const AssessmentSection = ({
     setData(d => d ? { ...d, grouped: addAssessmentToGrouped(d.grouped, created) } : d);
     setIsCreateOpen(false);
     setSelected(created);
+    assessmentService.getBySubject(subjectId).then(setData).catch(() => undefined);
   };
-
-  if (!data) return null;
 
   const visibleTrimesters = trimesterFilter === 'all'
     ? ([1, 2, 3] as const)
     : ([trimesterFilter] as const);
+  const grouped = data?.grouped ?? { 1: [], 2: [], 3: [] };
 
   return (
     <>
       <section>
-        <div className="mb-4 flex justify-end">
-          <button
-            type="button"
-            onClick={() => {
-              setCreateTrimester(trimesterFilter === 'all' ? 1 : trimesterFilter);
-              setIsCreateOpen(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700"
-          >
-            <Plus className="h-4 w-4" />
-            Ajouter un devoir
-          </button>
-        </div>
+        {loading ? (
+          <div className="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-400">
+            Chargement des devoirs...
+          </div>
+        ) : error ? (
+          <div className="rounded-xl border border-red-100 bg-white p-4 text-sm text-red-600">
+            {error}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <button
+              type="button"
+              onClick={() => {
+                setCreateTrimester(trimesterFilter === 'all' ? 1 : trimesterFilter);
+                setIsCreateOpen(true);
+              }}
+              className="min-h-[140px] w-full rounded-xl border-2 border-dashed border-gray-300 bg-white p-6 flex flex-col items-center justify-center gap-2 text-sm font-medium text-gray-600 transition-all duration-200 hover:border-primary-500 hover:bg-primary-50"
+            >
+              <Plus className="h-6 w-6 text-gray-400" />
+              <span>Ajouter un devoir</span>
+            </button>
 
-        <div className="space-y-6">
-          {visibleTrimesters.map(t => (
-            <div key={t}>
-              <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
-                Trimestre {t}
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {(data.grouped[t] ?? []).map(a => (
-                  <AssessmentCard
-                    key={a.id}
-                    assessment={a}
-                    color={subjectColor}
-                    onClick={() => setSelected(a)}
-                  />
-                ))}
-                {(data.grouped[t] ?? []).length === 0 && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCreateTrimester(t);
-                      setIsCreateOpen(true);
-                    }}
-                    className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-sm font-medium text-gray-500 hover:border-primary-400 hover:bg-primary-50"
-                  >
-                    + Ajouter un devoir T{t}
-                  </button>
-                )}
+            {visibleTrimesters.map(t => (
+              <div key={t}>
+                <h3 className="text-sm font-semibold text-gray-500 mb-3 uppercase tracking-wide">
+                  Trimestre {t}
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {(grouped[t] ?? []).map(a => (
+                    <AssessmentCard
+                      key={a.id}
+                      assessment={a}
+                      color={subjectColor}
+                      onClick={() => setSelected(a)}
+                    />
+                  ))}
+                  {(grouped[t] ?? []).length === 0 && (
+                    <div className="rounded-xl border border-gray-100 bg-white p-4 text-sm text-gray-400">
+                      Aucun devoir pour ce trimestre.
+                    </div>
+                  )}
+                </div>
               </div>
+            ))}
             </div>
-          ))}
-        </div>
+        )}
       </section>
 
       {selected && (

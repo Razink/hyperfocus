@@ -60,6 +60,7 @@ export interface Lesson {
   revisedAt?: string;
   createdAt: string;
   updatedAt: string;
+  resources?: LessonResource[];
 }
 
 export interface LessonDetail extends Lesson {
