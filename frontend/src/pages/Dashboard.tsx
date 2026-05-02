@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { BookOpen, CheckCircle2, Clock, TrendingUp, Plus, Layers, CalendarClock, X } from 'lucide-react';
+import { BookOpen, CheckCircle2, Clock, TrendingUp, Plus, Layers, CalendarClock, PenLine, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useAuthStore } from '../store/auth.store';
 import { dashboardService, type DashboardData, type UpcomingExam } from '../services/dashboard.service';
+import { exams, SUBJECT_COLORS } from '../data/schedule';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const timeAgo = (iso: string): string => {
@@ -182,6 +183,17 @@ export const Dashboard = () => {
 
   const upcomingExams = data?.upcomingExams ?? [];
 
+  const upcomingHomework = (() => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const in7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return exams
+      .filter(e => {
+        const d = new Date(e.date + 'T00:00:00');
+        return d >= today && d <= in7;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+  })();
+
   return (
     <Layout>
       <div className="px-4 pb-24 pt-5 sm:px-6 md:p-8">
@@ -192,6 +204,49 @@ export const Dashboard = () => {
           </h2>
           <p className="text-gray-500 mt-1">Voici un résumé de ta progression</p>
         </div>
+
+        {/* ── Upcoming homework ──────────────────────────────────────────────── */}
+        {upcomingHomework.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <PenLine className="w-5 h-5 text-orange-500" />
+                <h3 className="text-base font-semibold text-gray-900">Devoirs à venir — 7 jours</h3>
+              </div>
+              <Link to="/schedule" className="text-xs text-primary-600 hover:underline">Voir tout</Link>
+            </div>
+            <div className="space-y-2">
+              {upcomingHomework.map((hw, i) => {
+                const days = daysUntil(hw.date);
+                const colors = SUBJECT_COLORS[hw.subject];
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3"
+                  >
+                    <span
+                      className="shrink-0 w-2.5 h-2.5 rounded-full"
+                      style={{ backgroundColor: colors?.text ?? '#6b7280' }}
+                    />
+                    <span
+                      className="shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full"
+                      style={{ backgroundColor: colors?.bg ?? '#f3f4f6', color: colors?.text ?? '#374151' }}
+                    >
+                      {hw.subject}
+                    </span>
+                    {hw.detail && (
+                      <span className="text-sm text-gray-500 italic truncate flex-1">{hw.detail}</span>
+                    )}
+                    <span className="text-xs text-gray-400 shrink-0 ml-auto">
+                      {formatDate(hw.date + 'T00:00:00')}
+                    </span>
+                    <UrgencyBadge days={days} />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* ── Upcoming exams ─────────────────────────────────────────────────── */}
         {(loading || upcomingExams.length > 0) && (
