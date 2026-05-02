@@ -1,11 +1,17 @@
--- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ELEVE', 'PARENT');
+-- CreateEnum (safe: ignore if already exists)
+DO $$ BEGIN
+    CREATE TYPE "Role" AS ENUM ('ELEVE', 'PARENT');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- CreateEnum
-CREATE TYPE "ResourceType" AS ENUM ('LINK', 'DOC', 'IMAGE');
+DO $$ BEGIN
+    CREATE TYPE "ResourceType" AS ENUM ('LINK', 'DOC', 'IMAGE');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- CreateTable
-CREATE TABLE "users" (
+-- CreateTable (safe: pre-existing tables are skipped)
+CREATE TABLE IF NOT EXISTS "users" (
     "id" TEXT NOT NULL,
     "username" TEXT,
     "name" TEXT NOT NULL,
@@ -20,7 +26,7 @@ CREATE TABLE "users" (
 );
 
 -- CreateTable
-CREATE TABLE "subjects" (
+CREATE TABLE IF NOT EXISTS "subjects" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
@@ -33,7 +39,7 @@ CREATE TABLE "subjects" (
 );
 
 -- CreateTable
-CREATE TABLE "lessons" (
+CREATE TABLE IF NOT EXISTS "lessons" (
     "id" TEXT NOT NULL,
     "subject_id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
@@ -48,8 +54,8 @@ CREATE TABLE "lessons" (
     CONSTRAINT "lessons_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "lesson_resources" (
+-- CreateTable (new)
+CREATE TABLE IF NOT EXISTS "lesson_resources" (
     "id" TEXT NOT NULL,
     "lesson_id" TEXT NOT NULL,
     "type" "ResourceType" NOT NULL,
@@ -64,8 +70,8 @@ CREATE TABLE "lesson_resources" (
     CONSTRAINT "lesson_resources_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "assessments" (
+-- CreateTable (new)
+CREATE TABLE IF NOT EXISTS "assessments" (
     "id" TEXT NOT NULL,
     "subject_id" TEXT NOT NULL,
     "trimester" INTEGER NOT NULL,
@@ -77,8 +83,8 @@ CREATE TABLE "assessments" (
     CONSTRAINT "assessments_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
-CREATE TABLE "assessment_lessons" (
+-- CreateTable (new)
+CREATE TABLE IF NOT EXISTS "assessment_lessons" (
     "assessment_id" TEXT NOT NULL,
     "lesson_id" TEXT NOT NULL,
 
@@ -86,7 +92,7 @@ CREATE TABLE "assessment_lessons" (
 );
 
 -- CreateTable
-CREATE TABLE "revision_sessions" (
+CREATE TABLE IF NOT EXISTS "revision_sessions" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
     "date" TEXT NOT NULL,
@@ -102,34 +108,59 @@ CREATE TABLE "revision_sessions" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_username_key" ON "users"("username");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_username_key" ON "users"("username");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+CREATE UNIQUE INDEX IF NOT EXISTS "users_email_key" ON "users"("email");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "assessments_subject_id_trimester_kind_key" ON "assessments"("subject_id", "trimester", "kind");
+CREATE UNIQUE INDEX IF NOT EXISTS "assessments_subject_id_trimester_kind_key" ON "assessments"("subject_id", "trimester", "kind");
 
--- AddForeignKey
-ALTER TABLE "subjects" ADD CONSTRAINT "subjects_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+-- AddForeignKey (safe: ignore if already exists)
+DO $$ BEGIN
+    ALTER TABLE "subjects" ADD CONSTRAINT "subjects_user_id_fkey"
+        FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "lessons" ADD CONSTRAINT "lessons_subject_id_fkey" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "lessons" ADD CONSTRAINT "lessons_subject_id_fkey"
+        FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "lesson_resources" ADD CONSTRAINT "lesson_resources_lesson_id_fkey" FOREIGN KEY ("lesson_id") REFERENCES "lessons"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "lesson_resources" ADD CONSTRAINT "lesson_resources_lesson_id_fkey"
+        FOREIGN KEY ("lesson_id") REFERENCES "lessons"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "assessments" ADD CONSTRAINT "assessments_subject_id_fkey" FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "assessments" ADD CONSTRAINT "assessments_subject_id_fkey"
+        FOREIGN KEY ("subject_id") REFERENCES "subjects"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "assessment_lessons" ADD CONSTRAINT "assessment_lessons_assessment_id_fkey" FOREIGN KEY ("assessment_id") REFERENCES "assessments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "assessment_lessons" ADD CONSTRAINT "assessment_lessons_assessment_id_fkey"
+        FOREIGN KEY ("assessment_id") REFERENCES "assessments"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "assessment_lessons" ADD CONSTRAINT "assessment_lessons_lesson_id_fkey" FOREIGN KEY ("lesson_id") REFERENCES "lessons"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "assessment_lessons" ADD CONSTRAINT "assessment_lessons_lesson_id_fkey"
+        FOREIGN KEY ("lesson_id") REFERENCES "lessons"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "revision_sessions" ADD CONSTRAINT "revision_sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "revision_sessions" ADD CONSTRAINT "revision_sessions_user_id_fkey"
+        FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "revision_sessions" ADD CONSTRAINT "revision_sessions_lesson_id_fkey" FOREIGN KEY ("lesson_id") REFERENCES "lessons"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "revision_sessions" ADD CONSTRAINT "revision_sessions_lesson_id_fkey"
+        FOREIGN KEY ("lesson_id") REFERENCES "lessons"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
