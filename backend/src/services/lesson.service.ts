@@ -45,9 +45,10 @@ export class LessonService {
 
   async getById(id: string, userId: string) {
     const lesson = await prisma.lesson.findFirst({
-      where: {
-        id,
-        subject: { userId }
+      where: { id, subject: { userId } },
+      include: {
+        subject: { select: { id: true, name: true, color: true } },
+        resources: { orderBy: { order: 'asc' } }
       }
     });
 

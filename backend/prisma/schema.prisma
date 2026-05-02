@@ -38,8 +38,9 @@ model Subject {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessons Lesson[]
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+  assessments Assessment[]
 
   @@map("subjects")
 }
@@ -58,8 +59,61 @@ model Lesson {
 
   subject          Subject           @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   revisionSessions RevisionSession[]
+  resources        LessonResource[]
+  assessments      AssessmentLesson[]
 
   @@map("lessons")
+}
+
+enum ResourceType {
+  LINK
+  DOC
+  IMAGE
+}
+
+model LessonResource {
+  id        String       @id @default(uuid())
+  lessonId  String       @map("lesson_id")
+  type      ResourceType
+  title     String
+  url       String
+  mimeType  String?      @map("mime_type")
+  fileSize  Int?         @map("file_size")
+  order     Int          @default(0)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  lesson Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@map("lesson_resources")
+}
+
+model Assessment {
+  id        String    @id @default(uuid())
+  subjectId String    @map("subject_id")
+  trimester Int
+  kind      String    // DC1, DC2, DS1
+  date      DateTime? // date prévue du devoir
+  isPast    Boolean   @default(false) @map("is_past")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  subject Subject            @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  lessons AssessmentLesson[]
+
+  @@unique([subjectId, trimester, kind])
+  @@map("assessments")
+}
+
+model AssessmentLesson {
+  assessmentId String @map("assessment_id")
+  lessonId     String @map("lesson_id")
+
+  assessment Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@id([assessmentId, lessonId])
+  @@map("assessment_lessons")
 }
 
 model RevisionSession {

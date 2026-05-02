@@ -6,6 +6,8 @@ import subjectRoutes from './routes/subject.routes';
 import lessonRoutes from './routes/lesson.routes';
 import revisionRoutes from './routes/revision.routes';
 import dashboardRoutes from './routes/dashboard.routes';
+import resourceRoutes, { lessonResourceRouter } from './routes/resource.routes';
+import assessmentRoutes, { subjectAssessmentRouter } from './routes/assessment.routes';
 
 dotenv.config();
 
@@ -22,9 +24,13 @@ app.get('/health', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
+app.use('/api/subjects/:subjectId/assessments', subjectAssessmentRouter);
 app.use('/api/lessons', lessonRoutes);
+app.use('/api/lessons/:lessonId/resources', lessonResourceRouter);
 app.use('/api/revisions', revisionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/assessments', assessmentRoutes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);
