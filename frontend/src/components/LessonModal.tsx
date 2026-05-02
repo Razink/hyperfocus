@@ -393,7 +393,7 @@ export const LessonModal = ({ lessonId, subjectColor, onClose, onUpdated }: Less
   const resourcesByType = (type: ResourceType) =>
     (detail?.resources ?? []).filter(r => r.type === type);
 
-  const color = detail?.subject?.color ?? subjectColor;
+  const color = detail?.color ?? subjectColor;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
@@ -436,6 +436,9 @@ export const LessonModal = ({ lessonId, subjectColor, onClose, onUpdated }: Less
                   </h2>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <span className="rounded-full px-2 py-1 text-xs font-semibold text-white" style={{ backgroundColor: color }}>
+                    T{detail.trimester || 1}
+                  </span>
                   <button
                     onClick={() => { onClose(); navigate(`/lessons/${lessonId}/edit`); }}
                     className="flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"

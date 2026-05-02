@@ -10,6 +10,7 @@ import { resourceService } from '../services/resource.service';
 import type { LessonDetail, LessonResource } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') ?? 'http://localhost:3000';
+const LESSON_COLORS = ['#3b82f6', '#22c55e', '#f97316', '#a855f7', '#ec4899', '#14b8a6', '#eab308', '#ef4444'];
 
 export const LessonEdit = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,7 +18,13 @@ export const LessonEdit = () => {
   const [detail, setDetail] = useState<LessonDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ title: '', contentPercent: 0, isRevised: false });
+  const [form, setForm] = useState({
+    title: '',
+    contentPercent: 0,
+    trimester: 1,
+    color: LESSON_COLORS[0],
+    isRevised: false,
+  });
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [uploadingAttachments, setUploadingAttachments] = useState(false);
@@ -26,7 +33,13 @@ export const LessonEdit = () => {
     if (!id) return;
     lessonService.getById(id).then(d => {
       setDetail(d);
-      setForm({ title: d.title, contentPercent: d.contentPercent, isRevised: d.isRevised });
+      setForm({
+        title: d.title,
+        contentPercent: d.contentPercent,
+        trimester: d.trimester || 1,
+        color: d.color || LESSON_COLORS[0],
+        isRevised: d.isRevised,
+      });
       if (d.screenshotUrl) setScreenshotPreview(`${API_URL}${d.screenshotUrl}`);
     }).finally(() => setLoading(false));
   }, [id]);
@@ -86,7 +99,7 @@ export const LessonEdit = () => {
     navigate(`/subjects/${detail?.subject.id}`);
   };
 
-  const color = detail?.subject?.color ?? '#6366f1';
+  const color = form.color || detail?.color || detail?.subject?.color || LESSON_COLORS[0];
   const attachments = detail?.resources.filter(resource => resource.type === 'DOC' || resource.type === 'IMAGE') ?? [];
 
   if (loading) {
@@ -136,6 +149,44 @@ export const LessonEdit = () => {
                 className="w-full"
               />
               <ProgressBar value={form.contentPercent} color={color} showLabel={false} />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">Trimestre</label>
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map(trimester => (
+                  <button
+                    key={trimester}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, trimester }))}
+                    className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                      form.trimester === trimester
+                        ? 'border-primary-600 bg-primary-50 text-primary-700'
+                        : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    T{trimester}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-700">Couleur de la leçon</label>
+              <div className="grid grid-cols-8 gap-2">
+                {LESSON_COLORS.map(nextColor => (
+                  <button
+                    key={nextColor}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, color: nextColor }))}
+                    className={`h-8 rounded-lg border-2 ${
+                      form.color === nextColor ? 'border-gray-900' : 'border-transparent'
+                    }`}
+                    style={{ backgroundColor: nextColor }}
+                    aria-label={`Couleur ${nextColor}`}
+                  />
+                ))}
+              </div>
             </div>
 
             <div className="border-t border-gray-100 pt-5">

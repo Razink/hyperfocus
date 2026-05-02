@@ -39,6 +39,8 @@ export interface Lesson {
   subjectId?: string;
   title: string;
   order: number;
+  trimester: number;
+  color: string;
   contentPercent: number;
   screenshotUrl?: string;
   isRevised: boolean;

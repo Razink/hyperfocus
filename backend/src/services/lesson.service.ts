@@ -3,18 +3,24 @@ import { z } from 'zod';
 
 const createLessonSchema = z.object({
   title: z.string().min(1, 'Le titre est requis').max(200),
-  contentPercent: z.number().min(0).max(100).default(0)
+  contentPercent: z.number().min(0).max(100).default(0),
+  trimester: z.number().int().min(1).max(3).default(1),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i).optional()
 });
 
 const updateLessonSchema = z.object({
   title: z.string().min(1).max(200).optional(),
   contentPercent: z.number().min(0).max(100).optional(),
+  trimester: z.number().int().min(1).max(3).optional(),
+  color: z.string().regex(/^#[0-9A-F]{6}$/i).optional(),
   isRevised: z.boolean().optional()
 });
 
 const revisedSchema = z.object({
   isRevised: z.boolean()
 });
+
+const lessonColors = ['#3b82f6', '#22c55e', '#f97316', '#a855f7', '#ec4899', '#14b8a6', '#eab308', '#ef4444'];
 
 export class LessonService {
   async getBySubjectId(subjectId: string, userId: string) {
@@ -63,7 +69,7 @@ export class LessonService {
     return lesson;
   }
 
-  async create(subjectId: string, userId: string, data: { title: string; contentPercent?: number }) {
+  async create(subjectId: string, userId: string, data: { title: string; contentPercent?: number; trimester?: number; color?: string }) {
     const subject = await prisma.subject.findFirst({
       where: { id: subjectId, userId }
     });
@@ -88,6 +94,8 @@ export class LessonService {
         subjectId,
         title: validated.title,
         contentPercent: validated.contentPercent,
+        trimester: validated.trimester,
+        color: validated.color || lessonColors[((maxOrder?.order ?? 0) + 1) % lessonColors.length],
         order: (maxOrder?.order ?? 0) + 1
       }
     });
@@ -95,7 +103,7 @@ export class LessonService {
     return lesson;
   }
 
-  async update(id: string, userId: string, data: { title?: string; contentPercent?: number }) {
+  async update(id: string, userId: string, data: { title?: string; contentPercent?: number; trimester?: number; color?: string; isRevised?: boolean }) {
     const lesson = await prisma.lesson.findFirst({
       where: {
         id,

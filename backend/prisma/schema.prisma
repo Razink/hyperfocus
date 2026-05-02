@@ -50,6 +50,8 @@ model Lesson {
   subjectId      String    @map("subject_id")
   title          String
   order          Int       @default(0)
+  trimester      Int       @default(1)
+  color          String    @default("#3b82f6")
   contentPercent Int       @default(0) @map("content_percent")
   screenshotUrl  String?   @map("screenshot_url")
   isRevised      Boolean   @default(false) @map("is_revised")
