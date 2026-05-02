@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, CheckCircle2, Circle, Image as ImageIcon, Download } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle2, Circle, Image as ImageIcon, Download, Pencil } from 'lucide-react';
 import type { Lesson, SubjectDetail } from '../types';
 import { subjectService } from '../services/subject.service';
 import { lessonService } from '../services/lesson.service';
@@ -117,48 +117,58 @@ export const Lessons = () => {
         </header>
 
         <main className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6">
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {data.lessons.map((lesson: Lesson) => (
-              <Card key={lesson.id} color={data.subject.color}>
-                <div className="flex flex-col gap-4 sm:flex-row">
+              <Card key={lesson.id} color={data.subject.color} className="h-full">
+                <div className="flex h-full flex-col gap-4">
                   {/* Thumbnail — clic → fiche */}
                   <div
-                    className="flex-shrink-0 cursor-pointer"
+                    className="cursor-pointer"
                     onClick={() => setSelectedLessonId(lesson.id)}
                   >
                     {lesson.screenshotUrl ? (
                       <img
                         src={`${API_URL}${lesson.screenshotUrl}`}
                         alt={lesson.title}
-                        className="h-24 w-full rounded-lg object-cover hover:opacity-80 transition-opacity sm:h-24 sm:w-24"
+                        className="h-32 w-full rounded-lg object-cover transition-opacity hover:opacity-80"
                       />
                     ) : (
-                      <div className="flex h-24 w-full items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors sm:h-24 sm:w-24">
+                      <div className="flex h-32 w-full items-center justify-center rounded-lg bg-gray-100 transition-colors hover:bg-gray-200">
                         <ImageIcon className="w-7 h-7 text-gray-300" />
                       </div>
                     )}
                   </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <div className="mb-3 flex items-start justify-between gap-3">
                       <h3
-                        className="min-w-0 break-words text-lg font-semibold text-gray-900 cursor-pointer hover:text-gray-600 transition-colors"
+                        className="line-clamp-2 min-w-0 cursor-pointer break-words text-base font-semibold text-gray-900 transition-colors hover:text-gray-600"
                         onClick={() => setSelectedLessonId(lesson.id)}
                       >
                         {lesson.title}
                       </h3>
-                      <button
-                        onClick={() => handleToggleRevised(lesson.id, lesson.isRevised)}
-                        className="transition-colors shrink-0"
-                      >
-                        {lesson.isRevised
-                          ? <CheckCircle2 className="w-6 h-6 text-green-500" />
-                          : <Circle className="w-6 h-6 text-gray-300 hover:text-gray-400" />
-                        }
-                      </button>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button
+                          onClick={() => navigate(`/lessons/${lesson.id}/edit`)}
+                          className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                          Éditer
+                        </button>
+                        <button
+                          onClick={() => handleToggleRevised(lesson.id, lesson.isRevised)}
+                          className="transition-colors"
+                          aria-label={lesson.isRevised ? 'Marquer non révisé' : 'Marquer révisé'}
+                        >
+                          {lesson.isRevised
+                            ? <CheckCircle2 className="w-6 h-6 text-green-500" />
+                            : <Circle className="w-6 h-6 text-gray-300 hover:text-gray-400" />
+                          }
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="mb-2">
+                    <div className="mb-2 mt-auto">
                       <ProgressBar value={lesson.contentPercent} color={data.subject.color} showLabel={false} size="sm" />
                     </div>
 
@@ -179,7 +189,7 @@ export const Lessons = () => {
 
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="w-full bg-white border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
+              className="min-h-[250px] w-full bg-white border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
             >
               <Plus className="w-6 h-6 text-gray-400" />
               <span className="text-gray-600 font-medium">Ajouter un cours</span>

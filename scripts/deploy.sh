@@ -14,6 +14,13 @@ echo "Building and starting containers..."
 cd "$COMPOSE_DIR"
 docker compose up -d --build
 
+echo "Repairing legacy lesson resource schema if needed..."
+docker compose exec -T db psql -U hyperfocus -d hyperfocus -c \
+  'ALTER TABLE lesson_resources ADD COLUMN IF NOT EXISTS file_size integer;
+   UPDATE lesson_resources SET file_size = size WHERE file_size IS NULL AND size IS NOT NULL;
+   ALTER TABLE lesson_resources ALTER COLUMN type TYPE "ResourceType" USING type::text::"ResourceType";' \
+  2>/dev/null || true
+
 if [ -d "$COMPOSE_DIR/prisma/migrations" ]; then
   echo "Applying database migrations..."
   # Clear any failed migration entries so they can be retried

@@ -345,12 +345,17 @@ export const LessonModal = ({ lessonId, subjectColor, onClose, onUpdated }: Less
   const navigate = useNavigate();
   const [detail, setDetail] = useState<LessonDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!lessonId) { setDetail(null); return; }
     setLoading(true);
+    setError(null);
     lessonService.getById(lessonId)
       .then(setDetail)
+      .catch((err) => {
+        setError(err?.response?.data?.error?.message || 'Impossible de charger cette leçon.');
+      })
       .finally(() => setLoading(false));
   }, [lessonId]);
 
@@ -397,10 +402,27 @@ export const LessonModal = ({ lessonId, subjectColor, onClose, onUpdated }: Less
 
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-gray-100 bg-white px-5 py-4">
-          {loading || !detail ? (
+          {loading ? (
             <div className="animate-pulse space-y-2">
               <div className="h-4 w-32 bg-gray-200 rounded" />
               <div className="h-6 w-48 bg-gray-200 rounded" />
+            </div>
+          ) : error ? (
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Erreur de chargement</h2>
+                <p className="mt-1 text-sm text-red-600">{error}</p>
+              </div>
+              <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+          ) : !detail ? (
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm text-gray-500">Aucune donnée à afficher.</p>
+              <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
             </div>
           ) : (
             <>
