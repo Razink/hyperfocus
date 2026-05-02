@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, FileText, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { ProgressBar } from '../components/ProgressBar';
 import { lessonService } from '../services/lesson.service';
-import type { LessonDetail } from '../types';
+import { resourceService } from '../services/resource.service';
+import type { LessonDetail, LessonResource } from '../types';
 
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace('/api', '') ?? 'http://localhost:3000';
 
@@ -19,6 +20,7 @@ export const LessonEdit = () => {
   const [form, setForm] = useState({ title: '', contentPercent: 0, isRevised: false });
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
+  const [uploadingAttachments, setUploadingAttachments] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -34,6 +36,35 @@ export const LessonEdit = () => {
     if (!file) return;
     setScreenshotFile(file);
     setScreenshotPreview(URL.createObjectURL(file));
+  };
+
+  const refreshDetail = async () => {
+    if (!id) return;
+    const next = await lessonService.getById(id);
+    setDetail(next);
+  };
+
+  const handleAttachmentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!id || !e.target.files?.length) return;
+    setUploadingAttachments(true);
+    try {
+      for (const file of Array.from(e.target.files)) {
+        if (file.type.startsWith('image/')) {
+          await resourceService.addImage(id, file);
+        } else {
+          await resourceService.addDoc(id, file);
+        }
+      }
+      await refreshDetail();
+    } finally {
+      setUploadingAttachments(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteAttachment = async (resourceId: string) => {
+    await resourceService.delete(resourceId);
+    await refreshDetail();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,6 +87,7 @@ export const LessonEdit = () => {
   };
 
   const color = detail?.subject?.color ?? '#6366f1';
+  const attachments = detail?.resources.filter(resource => resource.type === 'DOC' || resource.type === 'IMAGE') ?? [];
 
   if (loading) {
     return (
@@ -104,6 +136,46 @@ export const LessonEdit = () => {
                 className="w-full"
               />
               <ProgressBar value={form.contentPercent} color={color} showLabel={false} />
+            </div>
+
+            <div className="border-t border-gray-100 pt-5">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">Pièces jointes</h2>
+                  <p className="text-xs text-gray-500">PDF, PowerPoint, images, Word.</p>
+                </div>
+                <label
+                  htmlFor="attachments-upload"
+                  className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-medium text-white hover:bg-primary-700"
+                >
+                  <Upload className="h-4 w-4" />
+                  {uploadingAttachments ? 'Upload...' : 'Ajouter'}
+                </label>
+                <input
+                  id="attachments-upload"
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,image/jpeg,image/png,image/webp"
+                  onChange={handleAttachmentUpload}
+                  className="hidden"
+                />
+              </div>
+
+              {attachments.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
+                  Aucune pièce jointe.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {attachments.map(resource => (
+                    <AttachmentCard
+                      key={resource.id}
+                      resource={resource}
+                      onDelete={() => handleDeleteAttachment(resource.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -183,5 +255,44 @@ export const LessonEdit = () => {
         </main>
       </div>
     </Layout>
+  );
+};
+
+const getFileLabel = (resource: LessonResource) => {
+  if (resource.type === 'IMAGE') return 'Image';
+  if (resource.mimeType?.includes('pdf')) return 'PDF';
+  if (resource.mimeType?.includes('powerpoint') || resource.mimeType?.includes('presentation')) return 'PPT';
+  if (resource.mimeType?.includes('word')) return 'Word';
+  return 'Document';
+};
+
+const AttachmentCard = ({ resource, onDelete }: { resource: LessonResource; onDelete: () => void }) => {
+  const url = `${API_URL}${resource.url}`;
+
+  return (
+    <div className="group relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+      {resource.type === 'IMAGE' ? (
+        <img src={url} alt={resource.title} className="h-28 w-full object-cover" />
+      ) : (
+        <div className="flex h-28 flex-col items-center justify-center gap-2 bg-white">
+          <FileText className="h-8 w-8 text-primary-500" />
+          <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
+            {getFileLabel(resource)}
+          </span>
+        </div>
+      )}
+      <div className="min-w-0 px-2 py-2">
+        <p className="truncate text-xs font-medium text-gray-700">{resource.title}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onDelete}
+        className="absolute right-1.5 top-1.5 rounded-full bg-white/90 p-1 text-gray-500 shadow-sm hover:text-red-500"
+        aria-label="Supprimer la pièce jointe"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+      {resource.type === 'IMAGE' && <ImageIcon className="absolute bottom-8 right-2 h-4 w-4 text-white drop-shadow" />}
+    </div>
   );
 };

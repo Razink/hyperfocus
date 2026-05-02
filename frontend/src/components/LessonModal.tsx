@@ -197,7 +197,7 @@ const ResourceSection = ({
           ref={fileRef}
           type="file"
           className="hidden"
-          accept={type === 'DOC' ? '.pdf,.doc,.docx' : 'image/jpeg,image/png,image/webp'}
+          accept={type === 'DOC' ? '.pdf,.doc,.docx,.ppt,.pptx' : 'image/jpeg,image/png,image/webp'}
           onChange={handleFile}
         />
       )}
@@ -231,19 +231,19 @@ const ResourceSection = ({
         </form>
       )}
 
-      {/* Image gallery */}
-      {type === 'IMAGE' && list.length > 0 && (
-        <ImageGallery
+      {/* Attachment thumbnails */}
+      {(type === 'IMAGE' || type === 'DOC') && list.length > 0 && (
+        <AttachmentGallery
+          type={type}
           resources={list}
-          lessonId={lessonId}
           onDeleted={onDeleted}
           onDragStart={handleDragStart}
           onDrop={handleDrop}
         />
       )}
 
-      {/* Link / Doc list */}
-      {type !== 'IMAGE' && (
+      {/* Link list */}
+      {type === 'LINK' && (
         <div className="space-y-1.5">
           {list.map((r, idx) => (
             <div
@@ -269,12 +269,20 @@ const ResourceSection = ({
   );
 };
 
-// ── Image gallery ─────────────────────────────────────────────────────────────
-const ImageGallery = ({
-  resources, lessonId, onDeleted, onDragStart, onDrop,
+// ── Attachment thumbnails ────────────────────────────────────────────────────
+const getFileLabel = (resource: LessonResource) => {
+  if (resource.type === 'IMAGE') return 'Image';
+  if (resource.mimeType?.includes('pdf')) return 'PDF';
+  if (resource.mimeType?.includes('powerpoint') || resource.mimeType?.includes('presentation')) return 'PPT';
+  if (resource.mimeType?.includes('word')) return 'Word';
+  return 'Doc';
+};
+
+const AttachmentGallery = ({
+  type, resources, onDeleted, onDragStart, onDrop,
 }: {
+  type: ResourceType;
   resources: LessonResource[];
-  lessonId: string;
   onDeleted: (id: string) => void;
   onDragStart: (idx: number) => void;
   onDrop: (idx: number) => void;
@@ -283,7 +291,7 @@ const ImageGallery = ({
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {resources.map((r, idx) => {
           const src = `${API_URL}${r.url}`;
           return (
@@ -293,10 +301,23 @@ const ImageGallery = ({
               onDragStart={() => onDragStart(idx)}
               onDragOver={e => e.preventDefault()}
               onDrop={() => onDrop(idx)}
-              className="group relative aspect-square rounded-lg overflow-hidden bg-gray-100 cursor-pointer"
-              onClick={() => setLightbox(src)}
+              className="group relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50 cursor-pointer"
+              onClick={() => type === 'IMAGE' ? setLightbox(src) : window.open(src, '_blank', 'noopener')}
             >
-              <img src={src} alt={r.title} className="h-full w-full object-cover" />
+              {type === 'IMAGE' ? (
+                <img src={src} alt={r.title} className="h-24 w-full object-cover" />
+              ) : (
+                <div className="flex h-24 flex-col items-center justify-center gap-2 bg-white">
+                  <FileText className="h-8 w-8 text-blue-500" />
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
+                    {getFileLabel(r)}
+                  </span>
+                </div>
+              )}
+              <div className="px-2 py-1.5">
+                <p className="truncate text-xs font-medium text-gray-700">{r.title}</p>
+                {r.fileSize && <p className="text-[11px] text-gray-400">{fileSize(r.fileSize)}</p>}
+              </div>
               <button
                 onClick={e => { e.stopPropagation(); onDeleted(r.id); }}
                 className="absolute top-1 right-1 rounded-full bg-black/50 p-0.5 text-white opacity-0 group-hover:opacity-100 transition-opacity"

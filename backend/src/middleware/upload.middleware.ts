@@ -34,11 +34,13 @@ export const uploadDoc = multer({
     const allowed = [
       'application/pdf',
       'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     ];
     allowed.includes(file.mimetype)
       ? cb(null, true)
-      : cb(new Error('Seuls PDF, DOC et DOCX sont autorisés'));
+      : cb(new Error('Seuls PDF, DOC, DOCX, PPT et PPTX sont autorisés'));
   }
 });
 

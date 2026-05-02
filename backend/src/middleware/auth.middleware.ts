@@ -3,6 +3,7 @@ import { verifyToken } from '../utils/jwt';
 
 export interface AuthRequest extends Request {
   userId?: string;
+  params: Record<string, string>;
 }
 
 export const authenticate = (req: AuthRequest, res: Response, next: NextFunction) => {
