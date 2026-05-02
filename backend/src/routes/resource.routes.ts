@@ -9,6 +9,7 @@ const ctrl = new ResourceController();
 router.use(authenticate);
 
 // Standalone resource actions (by resource id)
+router.get('/:id', ctrl.getById);
 router.patch('/:id', ctrl.rename);
 router.delete('/:id', ctrl.delete);
 

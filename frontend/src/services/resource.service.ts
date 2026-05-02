@@ -2,6 +2,11 @@ import api from './api';
 import type { LessonResource } from '../types';
 
 export const resourceService = {
+  async getById(id: string): Promise<LessonResource> {
+    const res = await api.get<LessonResource>(`/resources/${id}`);
+    return res.data;
+  },
+
   async addLink(lessonId: string, data: { url: string; title?: string }): Promise<LessonResource> {
     const res = await api.post<LessonResource>(`/lessons/${lessonId}/resources/link`, data);
     return res.data;

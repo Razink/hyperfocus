@@ -11,6 +11,9 @@ function handle(fn: () => Promise<any>, res: Response) {
 }
 
 export class ResourceController {
+  getById = (req: AuthRequest, res: Response) =>
+    handle(() => svc.getById(req.params.id as string, req.userId!), res);
+
   addLink = (req: AuthRequest, res: Response) =>
     handle(() => svc.addLink(req.params.lessonId as string, req.userId!, req.body).then(r => (res.status(201), r)), res);
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, FileText, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, FileCode2, FileText, Image as ImageIcon, Trash2, Upload } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
@@ -193,7 +193,7 @@ export const LessonEdit = () => {
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="text-sm font-semibold text-gray-900">Pièces jointes</h2>
-                  <p className="text-xs text-gray-500">PDF, PowerPoint, images, Word.</p>
+                  <p className="text-xs text-gray-500">PDF, PowerPoint, images, Word, HTML.</p>
                 </div>
                 <label
                   htmlFor="attachments-upload"
@@ -206,7 +206,7 @@ export const LessonEdit = () => {
                   id="attachments-upload"
                   type="file"
                   multiple
-                  accept=".pdf,.doc,.docx,.ppt,.pptx,image/jpeg,image/png,image/webp"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.html,.htm,image/jpeg,image/png,image/webp"
                   onChange={handleAttachmentUpload}
                   className="hidden"
                 />
@@ -311,22 +311,47 @@ export const LessonEdit = () => {
 
 const getFileLabel = (resource: LessonResource) => {
   if (resource.type === 'IMAGE') return 'Image';
+  if (resource.mimeType?.includes('html')) return 'HTML';
   if (resource.mimeType?.includes('pdf')) return 'PDF';
   if (resource.mimeType?.includes('powerpoint') || resource.mimeType?.includes('presentation')) return 'PPT';
   if (resource.mimeType?.includes('word')) return 'Word';
   return 'Document';
 };
 
+const isHtmlResource = (resource: LessonResource) =>
+  resource.mimeType?.includes('html') || /\.html?$/i.test(resource.url);
+
 const AttachmentCard = ({ resource, onDelete }: { resource: LessonResource; onDelete: () => void }) => {
   const url = `${API_URL}${resource.url}`;
+  const handleOpen = () => {
+    if (isHtmlResource(resource)) {
+      window.open(`/resources/${resource.id}/view`, '_blank', 'noopener');
+      return;
+    }
+    window.open(url, '_blank', 'noopener');
+  };
 
   return (
-    <div className="group relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
+    <div
+      className="group relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50 cursor-pointer"
+      onClick={handleOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleOpen();
+        }
+      }}
+    >
       {resource.type === 'IMAGE' ? (
         <img src={url} alt={resource.title} className="h-28 w-full object-cover" />
       ) : (
         <div className="flex h-28 flex-col items-center justify-center gap-2 bg-white">
-          <FileText className="h-8 w-8 text-primary-500" />
+          {isHtmlResource(resource)
+            ? <FileCode2 className="h-8 w-8 text-emerald-500" />
+            : <FileText className="h-8 w-8 text-primary-500" />
+          }
           <span className="rounded-full bg-primary-50 px-2 py-0.5 text-xs font-semibold text-primary-700">
             {getFileLabel(resource)}
           </span>
@@ -337,7 +362,10 @@ const AttachmentCard = ({ resource, onDelete }: { resource: LessonResource; onDe
       </div>
       <button
         type="button"
-        onClick={onDelete}
+        onClick={e => {
+          e.stopPropagation();
+          onDelete();
+        }}
         className="absolute right-1.5 top-1.5 rounded-full bg-white/90 p-1 text-gray-500 shadow-sm hover:text-red-500"
         aria-label="Supprimer la pièce jointe"
       >

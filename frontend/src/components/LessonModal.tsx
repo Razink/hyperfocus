@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  X, Edit2, Link2, FileText, Image as ImageIcon, Plus, Trash2,
+  X, Edit2, Link2, FileCode2, FileText, Image as ImageIcon, Plus, Trash2,
   GripVertical, ExternalLink, CheckCircle2, Loader2
 } from 'lucide-react';
 import type { LessonDetail, LessonResource, ResourceType } from '../types';
@@ -197,7 +197,7 @@ const ResourceSection = ({
           ref={fileRef}
           type="file"
           className="hidden"
-          accept={type === 'DOC' ? '.pdf,.doc,.docx,.ppt,.pptx' : 'image/jpeg,image/png,image/webp'}
+          accept={type === 'DOC' ? '.pdf,.doc,.docx,.ppt,.pptx,.html,.htm' : 'image/jpeg,image/png,image/webp'}
           onChange={handleFile}
         />
       )}
@@ -272,11 +272,15 @@ const ResourceSection = ({
 // ── Attachment thumbnails ────────────────────────────────────────────────────
 const getFileLabel = (resource: LessonResource) => {
   if (resource.type === 'IMAGE') return 'Image';
+  if (resource.mimeType?.includes('html')) return 'HTML';
   if (resource.mimeType?.includes('pdf')) return 'PDF';
   if (resource.mimeType?.includes('powerpoint') || resource.mimeType?.includes('presentation')) return 'PPT';
   if (resource.mimeType?.includes('word')) return 'Word';
   return 'Doc';
 };
+
+const isHtmlResource = (resource: LessonResource) =>
+  resource.mimeType?.includes('html') || /\.html?$/i.test(resource.url);
 
 const AttachmentGallery = ({
   type, resources, onDeleted, onDragStart, onDrop,
@@ -302,13 +306,22 @@ const AttachmentGallery = ({
               onDragOver={e => e.preventDefault()}
               onDrop={() => onDrop(idx)}
               className="group relative overflow-hidden rounded-lg border border-gray-100 bg-gray-50 cursor-pointer"
-              onClick={() => type === 'IMAGE' ? setLightbox(src) : window.open(src, '_blank', 'noopener')}
+              onClick={() => {
+                if (type === 'IMAGE') {
+                  setLightbox(src);
+                  return;
+                }
+                window.open(isHtmlResource(r) ? `/resources/${r.id}/view` : src, '_blank', 'noopener');
+              }}
             >
               {type === 'IMAGE' ? (
                 <img src={src} alt={r.title} className="h-24 w-full object-cover" />
               ) : (
                 <div className="flex h-24 flex-col items-center justify-center gap-2 bg-white">
-                  <FileText className="h-8 w-8 text-blue-500" />
+                  {isHtmlResource(r)
+                    ? <FileCode2 className="h-8 w-8 text-emerald-500" />
+                    : <FileText className="h-8 w-8 text-blue-500" />
+                  }
                   <span className="rounded-full bg-blue-50 px-2 py-0.5 text-xs font-semibold text-blue-700">
                     {getFileLabel(r)}
                   </span>

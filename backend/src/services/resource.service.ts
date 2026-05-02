@@ -35,7 +35,16 @@ async function verifyLessonOwnership(lessonId: string, userId: string) {
 
 async function verifyResourceOwnership(resourceId: string, userId: string) {
   const resource = await prisma.lessonResource.findFirst({
-    where: { id: resourceId, lesson: { subject: { userId } } }
+    where: { id: resourceId, lesson: { subject: { userId } } },
+    include: {
+      lesson: {
+        select: {
+          id: true,
+          title: true,
+          subject: { select: { id: true, name: true, color: true } }
+        }
+      }
+    }
   });
   if (!resource) {
     const err: any = new Error('Ressource non trouvée');
@@ -47,6 +56,10 @@ async function verifyResourceOwnership(resourceId: string, userId: string) {
 }
 
 export class ResourceService {
+  async getById(resourceId: string, userId: string) {
+    return verifyResourceOwnership(resourceId, userId);
+  }
+
   async addLink(lessonId: string, userId: string, body: { url: string; title?: string }) {
     await verifyLessonOwnership(lessonId, userId);
     const { url, title } = linkSchema.parse(body);

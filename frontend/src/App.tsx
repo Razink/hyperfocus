@@ -6,6 +6,7 @@ import { Schedule } from './pages/Schedule';
 import { Subjects } from './pages/Subjects';
 import { Lessons } from './pages/Lessons';
 import { LessonEdit } from './pages/LessonEdit';
+import { ResourceView } from './pages/ResourceView';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -51,6 +52,14 @@ function App() {
           element={
             <ProtectedRoute>
               <LessonEdit />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/resources/:id/view"
+          element={
+            <ProtectedRoute>
+              <ResourceView />
             </ProtectedRoute>
           }
         />
