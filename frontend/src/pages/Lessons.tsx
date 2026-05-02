@@ -23,6 +23,7 @@ export const Lessons = () => {
   const [data, setData] = useState<SubjectDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [trimesterFilter, setTrimesterFilter] = useState<'all' | 1 | 2 | 3>('all');
+  const [updatingTrimesterId, setUpdatingTrimesterId] = useState<string | null>(null);
 
   // Modal : nouveau cours
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -73,6 +74,30 @@ export const Lessons = () => {
   const handleToggleRevised = async (lessonId: string, current: boolean) => {
     await lessonService.updateRevised(lessonId, !current);
     loadLessons();
+  };
+
+  const handleChangeTrimester = async (lesson: Lesson, trimester: 1 | 2 | 3) => {
+    if (lesson.trimester === trimester || updatingTrimesterId) return;
+    const previousData = data;
+    setUpdatingTrimesterId(lesson.id);
+    setData(current => current
+      ? {
+          ...current,
+          lessons: current.lessons.map(item =>
+            item.id === lesson.id ? { ...item, trimester } : item
+          ),
+        }
+      : current
+    );
+
+    try {
+      await lessonService.update(lesson.id, { trimester });
+    } catch {
+      setData(previousData);
+      showToast('Impossible de changer le trimestre');
+    } finally {
+      setUpdatingTrimesterId(null);
+    }
   };
 
   const handleImported = (count: number) => {
@@ -208,13 +233,35 @@ export const Lessons = () => {
                         <ProgressBar value={lesson.contentPercent} color={lessonColor} showLabel={false} size="sm" />
                       </div>
 
-                      <div className="flex flex-col gap-1 text-sm sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-col gap-2 text-sm">
                         <span className="font-medium" style={{ color: lessonColor }}>
                           {lesson.contentPercent}% écrit
                         </span>
-                        <span className="w-fit rounded-full px-2 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: lessonColor }}>
-                          T{lesson.trimester || 1}
-                        </span>
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="inline-flex rounded-lg border border-gray-200 bg-white p-0.5">
+                            {([1, 2, 3] as const).map(trimester => {
+                              const active = (lesson.trimester || 1) === trimester;
+                              return (
+                                <button
+                                  key={trimester}
+                                  type="button"
+                                  disabled={updatingTrimesterId === lesson.id}
+                                  onClick={() => handleChangeTrimester(lesson, trimester)}
+                                  className={`min-w-8 rounded-md px-2 py-1 text-xs font-semibold transition-colors disabled:opacity-60 ${
+                                    active ? 'text-white' : 'text-gray-500 hover:bg-gray-50'
+                                  }`}
+                                  style={active ? { backgroundColor: lessonColor } : undefined}
+                                  aria-label={`Passer la leçon au trimestre ${trimester}`}
+                                >
+                                  T{trimester}
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {updatingTrimesterId === lesson.id && (
+                            <span className="text-xs text-gray-400">Maj...</span>
+                          )}
+                        </div>
                         {lesson.isRevised && lesson.revisedAt && (
                           <span className="text-gray-400 text-xs">
                             Révisé le {new Date(lesson.revisedAt).toLocaleDateString('fr-FR')}
