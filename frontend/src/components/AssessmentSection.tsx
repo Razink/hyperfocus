@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Calendar, CheckCircle2, ClipboardList, ExternalLink, FileCode2, FileText,
-  Link2, Upload, X
+  Link2, Plus, Upload, X
 } from 'lucide-react';
 import type { Assessment, AssessmentGrouped, AssessmentResource, Lesson } from '../types';
 import { assessmentService } from '../services/assessment.service';
@@ -14,6 +14,14 @@ const fmtDate = (iso?: string) =>
   iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : null;
 
 const kindLabel: Record<string, string> = { DC1: 'DC 1', DC2: 'DC 2', DS1: 'DS 1' };
+
+const addAssessmentToGrouped = (grouped: Record<number, Assessment[]>, assessment: Assessment) => {
+  const next = { ...grouped };
+  next[assessment.trimester] = [...(next[assessment.trimester] ?? []), assessment].sort((a, b) =>
+    a.kind.localeCompare(b.kind, 'fr')
+  );
+  return next;
+};
 
 const fileSize = (bytes?: number) => {
   if (!bytes) return '';
@@ -124,6 +132,124 @@ const AssessmentResourceGrid = ({
         </div>
       )}
     </>
+  );
+};
+
+const CreateAssessmentModal = ({
+  subjectId,
+  defaultTrimester,
+  color,
+  onClose,
+  onCreated,
+}: {
+  subjectId: string;
+  defaultTrimester: 1 | 2 | 3;
+  color: string;
+  onClose: () => void;
+  onCreated: (assessment: Assessment) => void;
+}) => {
+  const [trimester, setTrimester] = useState<1 | 2 | 3>(defaultTrimester);
+  const [kind, setKind] = useState('Examen');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', h);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', h);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const label = kind.trim();
+    if (!label) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const created = await assessmentService.create(subjectId, { trimester, kind: label });
+      onCreated(created);
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message ?? 'Impossible de créer le devoir');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative w-full rounded-t-2xl bg-white p-5 shadow-xl sm:max-w-md sm:rounded-xl">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold" style={{ color }}>Nouveau devoir</p>
+            <h2 className="text-lg font-bold text-gray-900">Ajouter un examen</h2>
+          </div>
+          <button onClick={onClose} className="rounded-lg p-1.5 hover:bg-gray-100">
+            <X className="h-5 w-5 text-gray-400" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">Trimestre</label>
+            <div className="grid grid-cols-3 gap-2">
+              {([1, 2, 3] as const).map(value => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setTrimester(value)}
+                  className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                    trimester === value
+                      ? 'border-primary-600 bg-primary-50 text-primary-700'
+                      : 'border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  T{value}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="assessment-kind" className="mb-2 block text-sm font-medium text-gray-700">
+              Libellé
+            </label>
+            <input
+              id="assessment-kind"
+              value={kind}
+              onChange={e => setKind(e.target.value)}
+              placeholder="Examen, Examen blanc, Rattrapage..."
+              required
+              maxLength={40}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-400"
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !kind.trim()}
+              className="flex-1 rounded-xl bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+            >
+              {saving ? 'Création...' : 'Créer'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 };
 
@@ -462,6 +588,8 @@ export const AssessmentSection = ({
 }) => {
   const [data, setData] = useState<AssessmentGrouped | null>(null);
   const [selected, setSelected] = useState<Assessment | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [createTrimester, setCreateTrimester] = useState<1 | 2 | 3>(1);
 
   useEffect(() => {
     assessmentService.getBySubject(subjectId).then(setData);
@@ -479,6 +607,12 @@ export const AssessmentSection = ({
     setSelected(updated);
   };
 
+  const handleCreated = (created: Assessment) => {
+    setData(d => d ? { ...d, grouped: addAssessmentToGrouped(d.grouped, created) } : d);
+    setIsCreateOpen(false);
+    setSelected(created);
+  };
+
   if (!data) return null;
 
   const visibleTrimesters = trimesterFilter === 'all'
@@ -488,6 +622,20 @@ export const AssessmentSection = ({
   return (
     <>
       <section>
+        <div className="mb-4 flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setCreateTrimester(trimesterFilter === 'all' ? 1 : trimesterFilter);
+              setIsCreateOpen(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white hover:bg-primary-700"
+          >
+            <Plus className="h-4 w-4" />
+            Ajouter un devoir
+          </button>
+        </div>
+
         <div className="space-y-6">
           {visibleTrimesters.map(t => (
             <div key={t}>
@@ -503,6 +651,18 @@ export const AssessmentSection = ({
                     onClick={() => setSelected(a)}
                   />
                 ))}
+                {(data.grouped[t] ?? []).length === 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCreateTrimester(t);
+                      setIsCreateOpen(true);
+                    }}
+                    className="rounded-xl border border-dashed border-gray-300 bg-white p-4 text-sm font-medium text-gray-500 hover:border-primary-400 hover:bg-primary-50"
+                  >
+                    + Ajouter un devoir T{t}
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -516,6 +676,16 @@ export const AssessmentSection = ({
           allLessons={lessons}
           onClose={() => setSelected(null)}
           onUpdated={handleUpdated}
+        />
+      )}
+
+      {isCreateOpen && (
+        <CreateAssessmentModal
+          subjectId={subjectId}
+          defaultTrimester={createTrimester}
+          color={subjectColor}
+          onClose={() => setIsCreateOpen(false)}
+          onCreated={handleCreated}
         />
       )}
     </>

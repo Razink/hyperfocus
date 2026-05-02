@@ -16,6 +16,9 @@ export class AssessmentController {
   getBySubject = (req: AuthRequest, res: Response) =>
     handle(() => svc.getBySubject(req.params.subjectId as string, req.userId!), res);
 
+  create = (req: AuthRequest, res: Response) =>
+    handle(() => svc.create(req.params.subjectId as string, req.userId!, req.body).then(a => (res.status(201), a)), res);
+
   getById = (req: AuthRequest, res: Response) =>
     handle(() => svc.getById(req.params.id as string, req.userId!), res);
 

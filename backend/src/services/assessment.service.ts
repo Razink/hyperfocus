@@ -22,6 +22,12 @@ const patchSchema = z.object({
   date: z.string().datetime({ offset: true }).nullable().optional(),
 });
 
+const createSchema = z.object({
+  trimester: z.number().int().min(1).max(3),
+  kind: z.string().min(1, 'Le libellé est requis').max(40).transform(value => value.trim()),
+  date: z.string().datetime({ offset: true }).nullable().optional(),
+});
+
 const setLessonsSchema = z.object({
   lessonIds: z.array(z.string().uuid()),
 });
@@ -108,6 +114,35 @@ export class AssessmentService {
     for (const a of assessments) grouped[a.trimester].push(a);
 
     return { subject: { id: subject.id, name: subject.name, color: subject.color }, grouped };
+  }
+
+  async create(subjectId: string, userId: string, body: unknown) {
+    const subject = await prisma.subject.findFirst({ where: { id: subjectId, userId } });
+    if (!subject) {
+      const err: any = new Error('Matière non trouvée');
+      err.status = 404; err.code = 'SUBJECT_NOT_FOUND';
+      throw err;
+    }
+
+    const data = createSchema.parse(body);
+    try {
+      const assessment = await prisma.assessment.create({
+        data: {
+          subjectId,
+          trimester: data.trimester,
+          kind: data.kind,
+          date: data.date ? new Date(data.date) : null,
+        },
+      });
+      return this.getById(assessment.id, userId);
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        const err: any = new Error('Un devoir avec ce libellé existe déjà pour ce trimestre');
+        err.status = 400; err.code = 'ASSESSMENT_ALREADY_EXISTS';
+        throw err;
+      }
+      throw error;
+    }
   }
 
   async getById(id: string, userId: string) {

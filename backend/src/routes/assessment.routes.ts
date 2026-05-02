@@ -23,3 +23,4 @@ export default router;
 export const subjectAssessmentRouter = Router({ mergeParams: true });
 subjectAssessmentRouter.use(authenticate);
 subjectAssessmentRouter.get('/', ctrl.getBySubject);
+subjectAssessmentRouter.post('/', ctrl.create);

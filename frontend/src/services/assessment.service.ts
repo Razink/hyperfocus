@@ -7,6 +7,11 @@ export const assessmentService = {
     return res.data;
   },
 
+  async create(subjectId: string, data: { trimester: number; kind: string; date?: string | null }): Promise<Assessment> {
+    const res = await api.post<Assessment>(`/subjects/${subjectId}/assessments`, data);
+    return res.data;
+  },
+
   async getById(id: string): Promise<Assessment> {
     const res = await api.get<Assessment>(`/assessments/${id}`);
     return res.data;
