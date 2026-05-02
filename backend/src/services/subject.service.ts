@@ -1,5 +1,6 @@
 import prisma from '../utils/prisma';
 import { z } from 'zod';
+import { ASSESSMENT_SLOTS } from './assessment.service';
 
 const createSubjectSchema = z.object({
   name: z.string().min(1, 'Le nom est requis').max(100),
@@ -83,13 +84,15 @@ export class SubjectService {
   async create(userId: string, data: { name: string; color: string; icon?: string }) {
     const validated = createSubjectSchema.parse(data);
 
-    const subject = await prisma.subject.create({
-      data: {
-        userId,
-        name: validated.name,
-        color: validated.color,
-        icon: validated.icon
-      }
+    const subject = await prisma.$transaction(async (tx) => {
+      const s = await tx.subject.create({
+        data: { userId, name: validated.name, color: validated.color, icon: validated.icon }
+      });
+      await tx.assessment.createMany({
+        data: ASSESSMENT_SLOTS.map(slot => ({ subjectId: s.id, ...slot })),
+        skipDuplicates: true,
+      });
+      return s;
     });
 
     return {

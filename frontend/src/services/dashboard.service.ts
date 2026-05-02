@@ -26,10 +26,28 @@ export interface SubjectStat {
   progressPercent: number;
 }
 
+export interface UpcomingLesson {
+  id: string;
+  title: string;
+  contentPercent: number;
+  isRevised: boolean;
+}
+
+export interface UpcomingExam {
+  id: string;
+  label: string;
+  trimester: number;
+  kind: string;
+  date: string;
+  subject: { id: string; name: string; color: string };
+  lessons: UpcomingLesson[];
+}
+
 export interface DashboardData {
   stats: DashboardStats;
   recentActivity: ActivityItem[];
   subjectStats: SubjectStat[];
+  upcomingExams: UpcomingExam[];
 }
 
 export const dashboardService = {

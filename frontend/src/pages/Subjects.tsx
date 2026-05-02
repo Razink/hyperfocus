@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, BookOpen, CheckCircle2 } from 'lucide-react';
 import type { Subject } from '../types';
 import { subjectService } from '../services/subject.service';
-import { useAuthStore } from '../store/auth.store';
 import { Layout } from '../components/Layout';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
@@ -93,13 +92,13 @@ export const Subjects = () => {
 
   return (
     <Layout>
-      <div className="p-8">
+      <div className="px-4 pb-24 pt-5 sm:px-6 md:p-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 font-display">Mes Matières</h2>
+          <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">Mes Matières</h2>
           <p className="text-gray-500 mt-1">Gérez vos matières et suivez votre progression</p>
         </div>
-        <div className="max-w-4xl">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="max-w-5xl">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {subjects.map((subject) => (
             <Card
               key={subject.id}
@@ -107,10 +106,10 @@ export const Subjects = () => {
               onClick={() => navigate(`/subjects/${subject.id}`)}
               className="relative"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex min-w-0 items-center gap-2">
                   {subject.icon && <span className="text-2xl">{subject.icon}</span>}
-                  <h3 className="text-lg font-semibold text-gray-900">{subject.name}</h3>
+                  <h3 className="truncate text-lg font-semibold text-gray-900">{subject.name}</h3>
                 </div>
                 <button
                   onClick={(e) => {
@@ -129,7 +128,7 @@ export const Subjects = () => {
                 showLabel={false}
               />
 
-              <div className="flex items-center justify-between mt-3 text-sm text-gray-600">
+              <div className="mt-3 flex flex-col gap-2 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-1">
                   <BookOpen className="w-4 h-4" />
                   <span>{subject.lessonsCount} cours</span>
@@ -150,7 +149,7 @@ export const Subjects = () => {
 
           <button
             onClick={() => handleOpenModal()}
-            className="bg-white border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200"
+            className="min-h-32 bg-white border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center gap-2 hover:border-primary-500 hover:bg-primary-50 transition-all duration-200 sm:p-8"
           >
             <Plus className="w-8 h-8 text-gray-400" />
             <span className="text-gray-600 font-medium">Ajouter une matière</span>
@@ -199,7 +198,7 @@ export const Subjects = () => {
             </div>
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="flex flex-col gap-2 pt-4 sm:flex-row">
             <Button type="button" variant="secondary" onClick={() => setIsModalOpen(false)} fullWidth>
               Annuler
             </Button>

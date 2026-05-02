@@ -2,35 +2,53 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const uploadDir = 'uploads/screenshots';
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+function ensureDir(dir: string) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 }
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+function makeStorage(dir: string) {
+  ensureDir(dir);
+  return multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, dir),
+    filename: (_req, file, cb) => {
+      const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      cb(null, unique + path.extname(file.originalname));
+    }
+  });
+}
+
+export const upload = multer({
+  storage: makeStorage('uploads/screenshots'),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = /jpeg|jpg|png/.test(path.extname(file.originalname).toLowerCase())
+      && /jpeg|jpg|png/.test(file.mimetype);
+    ok ? cb(null, true) : cb(new Error('Seuls JPG et PNG sont autorisés'));
   }
 });
 
-const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
-  const allowedTypes = /jpeg|jpg|png/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
-  } else {
-    cb(new Error('Seuls les fichiers JPG, JPEG et PNG sont autorisés'));
+export const uploadDoc = multer({
+  storage: makeStorage('uploads/docs'),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error('Seuls PDF, DOC et DOCX sont autorisés'));
   }
-};
+});
 
-export const upload = multer({
-  storage,
+export const uploadImage = multer({
+  storage: makeStorage('uploads/lesson-images'),
   limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter
+  fileFilter: (_req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+    allowed.includes(file.mimetype)
+      ? cb(null, true)
+      : cb(new Error('Seuls JPG, PNG et WEBP sont autorisés'));
+  }
 });

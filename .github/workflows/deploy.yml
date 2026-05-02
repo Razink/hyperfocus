@@ -1,0 +1,35 @@
+name: Deploy Hyperfocus
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: hyperfocus-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Trust deploy host
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H hyperfocus.kortaix.cloud >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: |
+          ssh root@hyperfocus.kortaix.cloud \
+            "cd /home/claude/workspace/hyperfocus && bash scripts/deploy.sh"

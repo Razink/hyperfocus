@@ -145,7 +145,7 @@ const WeekNav = ({ weekStart, onPrev, onNext, onToday }: {
 }) => {
   const weekEnd = addDays(weekStart, 4);
   return (
-    <div className="flex items-center gap-3 mb-4">
+    <div className="mb-4 flex flex-wrap items-center gap-2 sm:gap-3">
       <button onClick={onPrev} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
         <ChevronLeft className="w-5 h-5 text-gray-600" />
       </button>
@@ -155,7 +155,7 @@ const WeekNav = ({ weekStart, onPrev, onNext, onToday }: {
       <button onClick={onNext} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
         <ChevronRight className="w-5 h-5 text-gray-600" />
       </button>
-      <p className="text-sm text-gray-500 font-medium">
+      <p className="w-full text-sm font-medium text-gray-500 sm:w-auto">
         Semaine du {formatShortDate(weekStart)} au {formatShortDate(weekEnd)}
       </p>
     </div>
@@ -191,7 +191,7 @@ const Timetable = ({ showExams = false, weekStart }: { showExams?: boolean; week
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
       <div
-        className="grid min-w-[900px]"
+        className="grid min-w-[760px] sm:min-w-[900px]"
         style={{
           gridTemplateColumns: '80px repeat(10, 1fr)',
           gridTemplateRows: '40px repeat(5, 80px)',
@@ -292,7 +292,7 @@ const ExamList = () => {
 
     return (
       <div
-        className={`flex items-center gap-4 p-4 rounded-xl border transition-all ${
+        className={`flex flex-col gap-3 p-4 rounded-xl border transition-all sm:flex-row sm:items-center sm:gap-4 ${
           isPast ? 'opacity-50 bg-gray-50 border-gray-200' :
           isToday ? 'border-red-400 bg-red-50 shadow-sm' :
           isSoon ? 'border-orange-300 bg-orange-50 shadow-sm' :
@@ -300,7 +300,7 @@ const ExamList = () => {
         }`}
       >
         <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: text }} />
-        <div className="w-44 shrink-0">
+        <div className="w-full sm:w-44 sm:shrink-0">
           <p className="text-sm font-semibold text-gray-700 capitalize">{formatDate(exam.date)}</p>
           {!isPast && (
             <p className={`text-xs font-medium ${isToday ? 'text-red-600' : isSoon ? 'text-orange-600' : 'text-gray-400'}`}>
@@ -308,14 +308,14 @@ const ExamList = () => {
             </p>
           )}
         </div>
-        <span className="px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: bg, color: text }}>
+        <span className="w-fit px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: bg, color: text }}>
           {exam.subject}
         </span>
         {exam.detail && <span className="text-sm text-gray-500 italic">{exam.detail}</span>}
         {(() => {
           const slot = getSubjectSlot(exam.subject);
           return slot ? (
-            <span className="text-xs text-gray-400 ml-auto shrink-0">{slot.start}h–{slot.end}h</span>
+            <span className="text-xs text-gray-400 sm:ml-auto sm:shrink-0">{slot.start}h–{slot.end}h</span>
           ) : null;
         })()}
         {isPast && <span className="text-gray-400 text-sm shrink-0">✓ passé</span>}
@@ -525,7 +525,7 @@ const RevisionView = () => {
 
       {/* Week grid */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="grid grid-cols-5 divide-x divide-gray-100">
+        <div className="grid grid-cols-1 divide-y divide-gray-100 sm:grid-cols-5 sm:divide-x sm:divide-y-0">
           {DAYS.map((day, di) => {
             const date = weekDates[di];
             const iso = toISO(date);
@@ -534,7 +534,7 @@ const RevisionView = () => {
             const daySessions = sessionsByDay[di] || [];
 
             return (
-              <div key={di} className={`min-h-[280px] flex flex-col ${isToday ? 'border-t-2 border-primary-500' : ''}`}>
+              <div key={di} className={`min-h-[220px] flex flex-col sm:min-h-[280px] ${isToday ? 'border-t-2 border-primary-500' : ''}`}>
                 {/* Day header */}
                 <div className={`px-3 py-2.5 border-b border-gray-100 text-center ${isToday ? 'bg-primary-600' : 'bg-gray-50'}`}>
                   <p className={`text-xs font-bold ${isToday ? 'text-primary-100' : 'text-gray-600'}`}>{day}</p>
@@ -548,7 +548,6 @@ const RevisionView = () => {
                 <div className="flex-1 p-2 space-y-2">
                   {/* Exams for this day */}
                   {dayExams.map((exam, i) => {
-                    const colors = SUBJECT_COLORS[exam.subject];
                     return (
                       <div
                         key={`exam-${i}`}
@@ -599,7 +598,7 @@ const RevisionView = () => {
       {/* Stats */}
       {sessions.length > 0 && (
         <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-          <div className="flex items-center gap-6">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <p className="text-xs text-gray-400 uppercase tracking-wide">Séances cette semaine</p>
               <p className="text-2xl font-bold text-gray-800">{sessions.length}</p>
@@ -709,7 +708,7 @@ const RevisionView = () => {
             />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:gap-3">
             <Button fullWidth onClick={handleSave}>
               {editingSession ? 'Enregistrer' : 'Ajouter'}
             </Button>
@@ -754,9 +753,9 @@ export const Schedule = () => {
 
   return (
     <Layout>
-      <div className="p-8">
+      <div className="px-4 pb-24 pt-5 sm:px-6 md:p-8">
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 font-display">Emploi du temps</h2>
+          <h2 className="text-2xl font-bold text-gray-900 font-display sm:text-3xl">Emploi du temps</h2>
           <p className="text-gray-500 mt-1">
             {activeTab === 'revisions'
               ? 'Planifie tes séances de révision'
@@ -765,12 +764,12 @@ export const Schedule = () => {
           </p>
         </div>
 
-        <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit mb-6">
+        <div className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-gray-100 p-1 sm:flex sm:w-fit">
           {tabs.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
               onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all sm:justify-start sm:px-4 ${
                 activeTab === id
                   ? 'bg-white text-primary-700 shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'

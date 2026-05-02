@@ -1,4 +1,7 @@
 import prisma from '../utils/prisma';
+import { AssessmentService } from './assessment.service';
+
+const assessmentService = new AssessmentService();
 
 export class DashboardService {
   async getData(userId: string) {
@@ -117,8 +120,17 @@ export class DashboardService {
         date: e.date.toISOString(),
       }));
 
-    // ── Next exams (from subjects, no exam model yet — return empty) ──
-    // Will be useful once exam model is added
+    // ── Upcoming assessments (next 7 days) ────────────
+    const upcomingRaw = await assessmentService.getUpcoming(userId);
+    const upcomingExams = upcomingRaw.map(a => ({
+      id: a.id,
+      label: `T${a.trimester}-${a.kind}`,
+      trimester: a.trimester,
+      kind: a.kind,
+      date: a.date!.toISOString(),
+      subject: a.subject,
+      lessons: a.lessons.map(al => al.lesson),
+    }));
 
     // ── Per-subject breakdown ──────────────────────────
     const subjectStats = subjects.map(s => ({
@@ -143,6 +155,7 @@ export class DashboardService {
       },
       recentActivity,
       subjectStats,
+      upcomingExams,
     };
   }
 }
