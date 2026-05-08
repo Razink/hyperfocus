@@ -1,9 +1,3 @@
-export interface Exam {
-  date: string;
-  subject: string;
-  detail?: string;
-}
-
 export const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
   'Histoire-Géo':         { bg: '#ffedd5', text: '#c2410c' },
   'Éducation civique':    { bg: '#cffafe', text: '#0e7490' },
@@ -22,16 +16,3 @@ export const SUBJECT_COLORS: Record<string, { bg: string; text: string }> = {
   'Technique':            { bg: '#f1f5f9', text: '#475569' },
 };
 
-export const exams: Exam[] = [
-  { date: '2026-04-15', subject: 'Histoire-Géo',        detail: 'Géographie' },
-  { date: '2026-04-20', subject: 'Éducation civique',   detail: '' },
-  { date: '2026-04-21', subject: 'Arabe',               detail: 'Expression écrite' },
-  { date: '2026-04-22', subject: 'Mathématiques',       detail: '' },
-  { date: '2026-04-24', subject: 'Arabe',               detail: 'Étude de texte' },
-  { date: '2026-04-28', subject: 'Éducation Islamique', detail: '' },
-  { date: '2026-04-28', subject: 'SVT',                 detail: '' },
-  { date: '2026-04-29', subject: 'Français',            detail: '' },
-  { date: '2026-04-30', subject: 'Anglais',             detail: '' },
-  { date: '2026-05-05', subject: 'Physique',            detail: '' },
-  { date: '2026-05-07', subject: 'Technique',           detail: '' },
-];

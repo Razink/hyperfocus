@@ -25,6 +25,7 @@ model User {
 
   subjects         Subject[]
   revisionSessions RevisionSession[]
+  exams            Exam[]
 
   @@map("users")
 }
@@ -134,6 +135,20 @@ model AssessmentLesson {
 
   @@id([assessmentId, lessonId])
   @@map("assessment_lessons")
+}
+
+model Exam {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  subject   String
+  date      String   // YYYY-MM-DD
+  detail    String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("exams")
 }
 
 model RevisionSession {

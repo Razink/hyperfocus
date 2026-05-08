@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import { Layout } from '../components/Layout';
 import { useAuthStore } from '../store/auth.store';
 import { dashboardService, type DashboardData, type UpcomingExam } from '../services/dashboard.service';
-import { exams, SUBJECT_COLORS } from '../data/schedule';
+import { SUBJECT_COLORS } from '../data/schedule';
+import { examService, type Exam } from '../services/exam.service';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const timeAgo = (iso: string): string => {
@@ -141,11 +142,13 @@ export const Dashboard = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedExam, setSelectedExam] = useState<UpcomingExam | null>(null);
+  const [exams, setExams] = useState<Exam[]>([]);
 
   useEffect(() => {
     dashboardService.getData()
       .then(setData)
       .finally(() => setLoading(false));
+    examService.getAll().then(setExams).catch(err => console.error('Failed to load exams', err));
   }, []);
 
   const stats = data ? [

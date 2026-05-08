@@ -8,6 +8,7 @@ import revisionRoutes from './routes/revision.routes';
 import dashboardRoutes from './routes/dashboard.routes';
 import resourceRoutes, { lessonResourceRouter } from './routes/resource.routes';
 import assessmentRoutes, { subjectAssessmentRouter } from './routes/assessment.routes';
+import examRoutes from './routes/exam.routes';
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use('/api/revisions', revisionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resources', resourceRoutes);
 app.use('/api/assessments', assessmentRoutes);
+app.use('/api/exams', examRoutes);
 
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error(err.stack);

@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CalendarDays, BookOpen, Layers, GraduationCap, ChevronLeft, ChevronRight, Plus, Trash2, Clock } from 'lucide-react';
+import { CalendarDays, BookOpen, Layers, GraduationCap, ChevronLeft, ChevronRight, Plus, Trash2, Clock, Pencil } from 'lucide-react';
 import { Layout } from '../components/Layout';
 import { Modal } from '../components/Modal';
 import { Button } from '../components/Button';
 import { Input } from '../components/Input';
 import { revisionService, type RevisionSession, type CreateRevisionData } from '../services/revision.service';
-import { exams, SUBJECT_COLORS, type Exam } from '../data/schedule';
+import { examService, type Exam } from '../services/exam.service';
+import { SUBJECT_COLORS } from '../data/schedule';
 
 const DAYS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
 const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17];
@@ -127,7 +128,7 @@ const WeekNav = ({ weekStart, onPrev, onNext, onToday }: {
 };
 
 // ─── Timetable view ──────────────────────────────
-const Timetable = ({ showExams = false, weekStart }: { showExams?: boolean; weekStart?: Date }) => {
+const Timetable = ({ showExams = false, weekStart, exams }: { showExams?: boolean; weekStart?: Date; exams: Exam[] }) => {
   const today = new Date().getDay();
 
   // Filter exams: if weekStart provided, only show exams for that week
@@ -241,10 +242,62 @@ const Timetable = ({ showExams = false, weekStart }: { showExams?: boolean; week
 };
 
 // ─── Exam list view ──────────────────────────────
-const ExamList = () => {
+const ExamList = ({ exams, reload }: { exams: Exam[]; reload: () => void }) => {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const upcoming = exams.filter(e => new Date(e.date + 'T00:00:00') >= today);
   const past = exams.filter(e => new Date(e.date + 'T00:00:00') < today);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState<Exam | null>(null);
+  const [formSubject, setFormSubject] = useState(SUBJECT_NAMES[0]);
+  const [formDate, setFormDate] = useState('');
+  const [formDetail, setFormDetail] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const openAdd = () => {
+    setEditing(null);
+    setFormSubject(SUBJECT_NAMES[0]);
+    setFormDate(toISO(new Date()));
+    setFormDetail('');
+    setModalOpen(true);
+  };
+
+  const openEdit = (exam: Exam) => {
+    setEditing(exam);
+    setFormSubject(exam.subject);
+    setFormDate(exam.date);
+    setFormDetail(exam.detail || '');
+    setModalOpen(true);
+  };
+
+  const handleSave = async () => {
+    if (!formSubject || !formDate) return;
+    setSaving(true);
+    try {
+      const payload = { subject: formSubject, date: formDate, detail: formDetail || null };
+      if (editing) {
+        await examService.update(editing.id, payload);
+      } else {
+        await examService.create(payload);
+      }
+      setModalOpen(false);
+      reload();
+    } catch (err) {
+      console.error('Save exam failed', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Supprimer cet examen ?')) return;
+    try {
+      await examService.delete(id);
+      reload();
+    } catch (err) {
+      console.error('Delete exam failed', err);
+    }
+  };
 
   const ExamCard = ({ exam }: { exam: Exam }) => {
     const diff = daysUntil(exam.date);
@@ -283,12 +336,34 @@ const ExamList = () => {
           ) : null;
         })()}
         {isPast && <span className="text-gray-400 text-sm shrink-0">✓ passé</span>}
+        <div className="flex gap-1 sm:ml-auto sm:shrink-0">
+          <button
+            onClick={() => openEdit(exam)}
+            className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+            title="Modifier"
+          >
+            <Pencil className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => handleDelete(exam.id)}
+            className="p-1.5 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+            title="Supprimer"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     );
   };
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button onClick={openAdd}>
+          <Plus className="w-4 h-4 mr-1" /> Ajouter un examen
+        </Button>
+      </div>
+
       <div>
         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
           À venir — {upcoming.length} examen{upcoming.length > 1 ? 's' : ''}
@@ -296,7 +371,7 @@ const ExamList = () => {
         <div className="space-y-2">
           {upcoming.length === 0
             ? <p className="text-gray-400 text-sm">Aucun examen à venir.</p>
-            : upcoming.map((e, i) => <ExamCard key={i} exam={e} />)
+            : upcoming.map((e) => <ExamCard key={e.id} exam={e} />)
           }
         </div>
       </div>
@@ -304,16 +379,61 @@ const ExamList = () => {
         <div>
           <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wide mb-3">Passés</h3>
           <div className="space-y-2">
-            {past.map((e, i) => <ExamCard key={i} exam={e} />)}
+            {past.map((e) => <ExamCard key={e.id} exam={e} />)}
           </div>
         </div>
       )}
+
+      <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Modifier l\'examen' : 'Nouvel examen'}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Matière</label>
+            <select
+              value={formSubject}
+              onChange={e => setFormSubject(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              {SUBJECT_NAMES.map(name => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
+          </div>
+
+          <Input
+            label="Date"
+            type="date"
+            value={formDate}
+            onChange={e => setFormDate(e.target.value)}
+            required
+          />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Détail (optionnel)</label>
+            <input
+              type="text"
+              value={formDetail}
+              onChange={e => setFormDetail(e.target.value)}
+              placeholder="Ex: Géographie, Expression écrite..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:gap-3">
+            <Button fullWidth onClick={handleSave} disabled={saving}>
+              {saving ? 'Sauvegarde...' : editing ? 'Enregistrer' : 'Ajouter'}
+            </Button>
+            <Button fullWidth variant="secondary" onClick={() => setModalOpen(false)}>
+              Annuler
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };
 
 // ─── Revision view (4th tab) ─────────────────────
-const RevisionView = () => {
+const RevisionView = ({ exams }: { exams: Exam[] }) => {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [sessions, setSessions] = useState<RevisionSession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -687,7 +807,7 @@ const RevisionView = () => {
 };
 
 // ─── Combined view with week navigation ──────────
-const CombinedView = () => {
+const CombinedView = ({ exams }: { exams: Exam[] }) => {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   return (
     <div>
@@ -697,7 +817,7 @@ const CombinedView = () => {
         onNext={() => setWeekStart(prev => addDays(prev, 7))}
         onToday={() => setWeekStart(getMonday(new Date()))}
       />
-      <Timetable showExams weekStart={weekStart} />
+      <Timetable showExams weekStart={weekStart} exams={exams} />
     </div>
   );
 };
@@ -714,6 +834,18 @@ const tabs: { id: Tab; label: string; icon: typeof CalendarDays }[] = [
 
 export const Schedule = () => {
   const [activeTab, setActiveTab] = useState<Tab>('timetable');
+  const [exams, setExams] = useState<Exam[]>([]);
+
+  const reloadExams = useCallback(async () => {
+    try {
+      const data = await examService.getAll();
+      setExams(data);
+    } catch (err) {
+      console.error('Failed to load exams', err);
+    }
+  }, []);
+
+  useEffect(() => { reloadExams(); }, [reloadExams]);
 
   return (
     <Layout>
@@ -723,6 +855,8 @@ export const Schedule = () => {
           <p className="text-gray-500 mt-1">
             {activeTab === 'revisions'
               ? 'Planifie tes séances de révision'
+              : activeTab === 'exams'
+              ? 'Gère tes examens à venir'
               : 'Semaine du 14 au 18 avril 2026'
             }
           </p>
@@ -745,10 +879,10 @@ export const Schedule = () => {
           ))}
         </div>
 
-        {activeTab === 'timetable' && <Timetable />}
-        {activeTab === 'exams'     && <ExamList />}
-        {activeTab === 'combined'  && <CombinedView />}
-        {activeTab === 'revisions' && <RevisionView />}
+        {activeTab === 'timetable' && <Timetable exams={exams} />}
+        {activeTab === 'exams'     && <ExamList exams={exams} reload={reloadExams} />}
+        {activeTab === 'combined'  && <CombinedView exams={exams} />}
+        {activeTab === 'revisions' && <RevisionView exams={exams} />}
       </div>
     </Layout>
   );
