@@ -24,12 +24,11 @@ const NOTE_FIELDS: { key: keyof Row; label: string }[] = [
 function round2(n: number) { return Math.round(n * 100) / 100; }
 
 function computeMoyenne(r: Row): number | null {
-  if (r.moyenne !== null && r.moyenne !== undefined) return r.moyenne;
   const notes = NOTE_FIELDS
     .map(f => r[f.key])
     .filter((v): v is number => typeof v === 'number');
-  if (notes.length === 0) return null;
-  return round2(notes.reduce((a, b) => a + b, 0) / notes.length);
+  if (notes.length > 0) return round2(notes.reduce((a, b) => a + b, 0) / notes.length);
+  return r.moyenne ?? null;
 }
 
 function computeGeneral(rows: Row[]): { moyenne: number | null; totalCoef: number } {
