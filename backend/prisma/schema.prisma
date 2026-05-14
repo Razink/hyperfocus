@@ -26,6 +26,7 @@ model User {
   subjects         Subject[]
   revisionSessions RevisionSession[]
   exams            Exam[]
+  bulletins        Bulletin[]
 
   @@map("users")
 }
@@ -39,9 +40,10 @@ model Subject {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  lessons     Lesson[]
-  assessments Assessment[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lessons          Lesson[]
+  assessments      Assessment[]
+  bulletinSubjects BulletinSubject[]
 
   @@map("subjects")
 }
@@ -149,6 +151,54 @@ model Exam {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("exams")
+}
+
+model Bulletin {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  schoolYear     String   @map("school_year") // ex: "2025/2026"
+  trimester      Int      // 1 | 2 | 3
+  className      String?  @map("class_name") // ex: "9ème année enseignement de base 1"
+  classSize      Int?     @map("class_size") // effectif (nombre d'élèves)
+  rank           Int?     // rang final dans la classe
+  generalAverage Decimal? @map("general_average") @db.Decimal(5, 2) // moyenne du trimestre (calculée)
+  isProjection   Boolean  @default(false) @map("is_projection")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjects BulletinSubject[]
+
+  @@unique([userId, schoolYear, trimester, isProjection])
+  @@map("bulletins")
+}
+
+model BulletinSubject {
+  id             String   @id @default(uuid())
+  bulletinId     String   @map("bulletin_id")
+  subjectId      String?  @map("subject_id") // lien optionnel vers Subject (création auto si manquant)
+  name           String   // nom affiché (FR canonique)
+  coefficient    Decimal  @db.Decimal(4, 2)
+  order          Int      @default(0)
+  oral           Decimal? @db.Decimal(5, 2) // شفاهي
+  tp             Decimal? @db.Decimal(5, 2) // أشغال تطبيقية
+  examenEcrit    Decimal? @map("examen_ecrit") @db.Decimal(5, 2) // اختبار كتابي
+  dc1            Decimal? @db.Decimal(5, 2) // فرض مراقبة 1
+  dc2            Decimal? @db.Decimal(5, 2) // فرض مراقبة 2
+  devoirSynthese Decimal? @map("devoir_synthese") @db.Decimal(5, 2) // فرض تأليفي
+  moyenne        Decimal? @db.Decimal(5, 2) // معدل الثلاثي
+  rank           Int? // الرتبة
+  total          Decimal? @db.Decimal(6, 2) // الحاصل = moyenne × coef
+  exempted       Boolean  @default(false) // معفى
+  teacherNote    String?  @map("teacher_note") // ملاحظات الأستاذ
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  bulletin Bulletin @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+  subject  Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@unique([bulletinId, name])
+  @@map("bulletin_subjects")
 }
 
 model RevisionSession {

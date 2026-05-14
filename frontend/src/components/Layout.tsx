@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CalendarDays, BookOpen, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, BookOpen, FileText, LogOut, Zap } from 'lucide-react';
 import { useAuthStore } from '../store/auth.store';
 
 interface LayoutProps {
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/schedule', label: 'Emploi du temps', icon: CalendarDays },
   { to: '/subjects', label: 'Matières', icon: BookOpen },
+  { to: '/bulletins', label: 'Bulletins', icon: FileText },
 ];
 
 export const Layout = ({ children }: LayoutProps) => {
@@ -92,7 +93,7 @@ export const Layout = ({ children }: LayoutProps) => {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-3 border-t border-gray-200 bg-white px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-30 grid grid-cols-4 border-t border-gray-200 bg-white px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}

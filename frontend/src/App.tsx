@@ -7,6 +7,9 @@ import { Subjects } from './pages/Subjects';
 import { Lessons } from './pages/Lessons';
 import { LessonEdit } from './pages/LessonEdit';
 import { ResourceView } from './pages/ResourceView';
+import { Bulletins } from './pages/Bulletins';
+import { BulletinDetail } from './pages/BulletinDetail';
+import { BulletinProjection } from './pages/BulletinProjection';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 function App() {
@@ -68,6 +71,30 @@ function App() {
           element={
             <ProtectedRoute>
               <ResourceView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bulletins"
+          element={
+            <ProtectedRoute>
+              <Bulletins />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bulletins/projection"
+          element={
+            <ProtectedRoute>
+              <BulletinProjection />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/bulletins/:id"
+          element={
+            <ProtectedRoute>
+              <BulletinDetail />
             </ProtectedRoute>
           }
         />
